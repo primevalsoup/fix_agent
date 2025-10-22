@@ -6,10 +6,7 @@ import os
 import tempfile
 import csv
 
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../broker'))
-
-from models import init_db, get_session, Stock
+from broker.models import init_db, get_session, Stock
 
 
 @pytest.fixture

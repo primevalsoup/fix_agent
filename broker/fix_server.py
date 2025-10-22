@@ -7,7 +7,7 @@ import threading
 import simplefix
 from datetime import datetime
 import uuid
-from models import Order, OrderSide, OrderType, TimeInForce, OrderStatus, get_session
+from broker.models import Order, OrderSide, OrderType, TimeInForce, OrderStatus, get_session
 
 
 class FIXServer:
@@ -333,7 +333,7 @@ class FIXServer:
 
 # For testing
 if __name__ == '__main__':
-    from models import init_db
+    from broker.models import init_db
 
     # Initialize database
     init_db('broker.db')

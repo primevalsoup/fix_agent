@@ -8,10 +8,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../client'))
-
-from models import (
+from client.models import (
     Base, Order, Execution,
     OrderSide, OrderType, TimeInForce, OrderStatus,
     init_db, get_session

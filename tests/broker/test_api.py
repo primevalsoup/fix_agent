@@ -7,10 +7,7 @@ import tempfile
 import csv
 import json
 
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../../broker'))
-
-from models import (
+from broker.models import (
     init_db, get_session, Order, Stock, Execution,
     OrderSide, OrderType, TimeInForce, OrderStatus
 )
@@ -48,31 +45,36 @@ def test_csv_path():
 @pytest.fixture
 def client(test_db_path, test_csv_path, monkeypatch):
     """Create Flask test client"""
-    # Monkeypatch the database path and CSV path
-    monkeypatch.setattr('broker.models.get_session',
-                        lambda: get_session(test_db_path))
+    # Initialize database
+    init_db(test_db_path)
 
     # Change working directory for CSV loading
     original_dir = os.getcwd()
     test_dir = os.path.dirname(test_csv_path)
     os.chdir(test_dir)
-    monkeypatch.setenv('TESTING', 'True')
 
     # Rename CSV to stock_universe.csv
-    os.rename(test_csv_path, os.path.join(test_dir, 'stock_universe.csv'))
-    csv_path = os.path.join(test_dir, 'stock_universe.csv')
+    if os.path.exists(test_csv_path):
+        csv_path = os.path.join(test_dir, 'stock_universe.csv')
+        if not os.path.exists(csv_path):
+            os.rename(test_csv_path, csv_path)
+    else:
+        csv_path = os.path.join(test_dir, 'stock_universe.csv')
 
-    # Initialize database
-    init_db(test_db_path)
+    # Patch get_session to use test database
+    original_get_session = get_session
+    def mock_get_session(db_path='broker.db'):
+        return original_get_session(test_db_path)
+
+    monkeypatch.setattr('broker.models.get_session', mock_get_session)
+    monkeypatch.setattr('broker.app.get_session', mock_get_session)
 
     # Import app after patching
-    from app import app as flask_app
+    from broker.app import app as flask_app, fix_server
     flask_app.config['TESTING'] = True
 
-    # Disable FIX server for tests
-    import app
-    if hasattr(app, 'fix_server'):
-        app.fix_server.running = False
+    # Stop FIX server
+    fix_server.running = False
 
     with flask_app.test_client() as test_client:
         yield test_client
