@@ -163,7 +163,7 @@ class FIXServer:
                 return
 
             msg_type = msg.get(simplefix.TAG_MSGTYPE)
-            sender = msg.get(simplefix.TAG_SENDERCOMPID)
+            sender = msg.get(simplefix.TAG_SENDER_COMPID)
 
             # Log parsed message type
             if sender:
@@ -187,7 +187,7 @@ class FIXServer:
 
     def _handle_logon(self, msg, client_socket):
         """Handle Logon message"""
-        target_comp_id = msg.get(simplefix.TAG_SENDERCOMPID).decode('utf-8')
+        target_comp_id = msg.get(simplefix.TAG_SENDER_COMPID).decode('utf-8')
         self.logger.info(f"Logon from {target_comp_id}")
 
         # Store client info
@@ -199,8 +199,8 @@ class FIXServer:
         # Send Logon response
         response = simplefix.FixMessage()
         response.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_LOGON)
-        response.append_pair(simplefix.TAG_SENDERCOMPID, self.sender_comp_id)
-        response.append_pair(simplefix.TAG_TARGETCOMPID, target_comp_id)
+        response.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
+        response.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
         response.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
         response.append_pair(98, 0)  # EncryptMethod: None
         response.append_pair(108, 30)  # HeartBtInt: 30 seconds
@@ -219,8 +219,8 @@ class FIXServer:
 
         response = simplefix.FixMessage()
         response.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_HEARTBEAT)
-        response.append_pair(simplefix.TAG_SENDERCOMPID, self.sender_comp_id)
-        response.append_pair(simplefix.TAG_TARGETCOMPID, target_comp_id)
+        response.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
+        response.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
         response.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
         if test_req_id:
             response.append_pair(112, test_req_id)  # Echo back TestReqID
@@ -248,7 +248,7 @@ class FIXServer:
             else:
                 time_in_force = '0'  # Day order default
 
-            sender_comp_id = msg.get(simplefix.TAG_SENDERCOMPID).decode('utf-8')
+            sender_comp_id = msg.get(simplefix.TAG_SENDER_COMPID).decode('utf-8')
 
             self.logger.info(f"New Order: {cl_ord_id} {symbol} {side} {order_qty} @ {price if price else 'MKT'}")
 
@@ -314,8 +314,8 @@ class FIXServer:
 
         msg = simplefix.FixMessage()
         msg.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_EXECUTION_REPORT)
-        msg.append_pair(simplefix.TAG_SENDERCOMPID, self.sender_comp_id)
-        msg.append_pair(simplefix.TAG_TARGETCOMPID, target_comp_id)
+        msg.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
+        msg.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
         msg.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
 
         # Order identification
@@ -347,7 +347,11 @@ class FIXServer:
     def _send_message(self, msg, client_socket):
         """Send FIX message to client"""
         try:
-            msg.append_time(simplefix.TAG_SENDING_TIME)
+            # Add BeginString if not already set
+            if not msg.get(simplefix.TAG_BEGINSTRING):
+                msg.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
+
+            msg.append_utc_timestamp(simplefix.TAG_SENDING_TIME)
             encoded = msg.encode()
 
             # Log outgoing message
