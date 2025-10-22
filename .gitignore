@@ -33,6 +33,10 @@ env/
 *.sqlite
 *.sqlite3
 
+# Logs
+logs/
+*.log
+
 # OS
 .DS_Store
 Thumbs.db

@@ -7,11 +7,49 @@ import threading
 import simplefix
 from datetime import datetime
 import uuid
+import logging
+import os
 from broker.models import Order, OrderSide, OrderType, TimeInForce, OrderStatus, get_session
 
 
+# Configure logging
+def setup_fix_logging(log_dir='logs'):
+    """Setup FIX message logging"""
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+
+    # Create logger
+    logger = logging.getLogger('FIXServer')
+    logger.setLevel(logging.DEBUG)
+
+    # Create file handler for all messages
+    fh_all = logging.FileHandler(os.path.join(log_dir, 'fix_server.log'))
+    fh_all.setLevel(logging.DEBUG)
+
+    # Create file handler for FIX messages only
+    fh_messages = logging.FileHandler(os.path.join(log_dir, 'fix_messages.log'))
+    fh_messages.setLevel(logging.INFO)
+
+    # Create console handler
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.INFO)
+
+    # Create formatter
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh_all.setFormatter(formatter)
+    fh_messages.setFormatter(formatter)
+    ch.setFormatter(formatter)
+
+    # Add handlers
+    logger.addHandler(fh_all)
+    logger.addHandler(fh_messages)
+    logger.addHandler(ch)
+
+    return logger
+
+
 class FIXServer:
-    def __init__(self, host='0.0.0.0', port=5001, sender_comp_id='BROKER'):
+    def __init__(self, host='0.0.0.0', port=5001, sender_comp_id='BROKER', log_dir='logs'):
         self.host = host
         self.port = port
         self.sender_comp_id = sender_comp_id
@@ -20,6 +58,8 @@ class FIXServer:
         self.server_socket = None
         self.msg_seq_num = 1
         self.order_callback = None  # Callback when order is received
+        self.logger = setup_fix_logging(log_dir)
+        self.logger.info(f"FIX Server initialized: {sender_comp_id} on {host}:{port}")
 
     def set_order_callback(self, callback):
         """Set callback function to be called when order is received"""
@@ -32,7 +72,7 @@ class FIXServer:
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((self.host, self.port))
         self.server_socket.listen(5)
-        print(f"[FIX Server] Listening on {self.host}:{self.port}")
+        self.logger.info(f"FIX Server listening on {self.host}:{self.port}")
 
         # Accept connections in a separate thread
         accept_thread = threading.Thread(target=self._accept_connections)
@@ -44,7 +84,7 @@ class FIXServer:
         while self.running:
             try:
                 client_socket, address = self.server_socket.accept()
-                print(f"[FIX Server] Client connected from {address}")
+                self.logger.info(f"Client connected from {address}")
 
                 # Handle client in separate thread
                 client_thread = threading.Thread(
@@ -55,7 +95,7 @@ class FIXServer:
                 client_thread.start()
             except Exception as e:
                 if self.running:
-                    print(f"[FIX Server] Error accepting connection: {e}")
+                    self.logger.error(f"Error accepting connection: {e}")
 
     def _handle_client(self, client_socket, address):
         """Handle messages from a connected client"""
@@ -65,7 +105,7 @@ class FIXServer:
             try:
                 data = client_socket.recv(4096)
                 if not data:
-                    print(f"[FIX Server] Client {address} disconnected")
+                    self.logger.info(f"Client {address} disconnected")
                     break
 
                 buffer += data
@@ -98,11 +138,11 @@ class FIXServer:
                         self._process_message(msg_bytes, client_socket)
 
                     except Exception as e:
-                        print(f"[FIX Server] Error processing message: {e}")
+                        self.logger.error(f"Error processing message: {e}")
                         break
 
             except Exception as e:
-                print(f"[FIX Server] Error handling client {address}: {e}")
+                self.logger.error(f"Error handling client {address}: {e}")
                 break
 
         client_socket.close()
@@ -112,6 +152,9 @@ class FIXServer:
     def _process_message(self, msg_bytes, client_socket):
         """Process a FIX message"""
         try:
+            # Log raw FIX message received
+            self.logger.debug(f"RECV: {msg_bytes}")
+
             parser = simplefix.FixParser()
             parser.append_buffer(msg_bytes)
             msg = parser.get_message()
@@ -120,6 +163,11 @@ class FIXServer:
                 return
 
             msg_type = msg.get(simplefix.TAG_MSGTYPE)
+            sender = msg.get(simplefix.TAG_SENDERCOMPID)
+
+            # Log parsed message type
+            if sender:
+                self.logger.info(f"Received {self._get_msg_type_name(msg_type)} from {sender.decode('utf-8')}")
 
             if msg_type == simplefix.MSGTYPE_LOGON:
                 self._handle_logon(msg, client_socket)
@@ -132,15 +180,15 @@ class FIXServer:
             elif msg_type == simplefix.MSGTYPE_ORDER_CANCEL_REQUEST:
                 self._handle_cancel_request(msg, client_socket)
             else:
-                print(f"[FIX Server] Unknown message type: {msg_type}")
+                self.logger.warning(f"Unknown message type: {msg_type}")
 
         except Exception as e:
-            print(f"[FIX Server] Error processing message: {e}")
+            self.logger.error(f"Error processing message: {e}")
 
     def _handle_logon(self, msg, client_socket):
         """Handle Logon message"""
         target_comp_id = msg.get(simplefix.TAG_SENDERCOMPID).decode('utf-8')
-        print(f"[FIX Server] Logon from {target_comp_id}")
+        self.logger.info(f"Logon from {target_comp_id}")
 
         # Store client info
         self.clients[client_socket] = {
@@ -202,7 +250,7 @@ class FIXServer:
 
             sender_comp_id = msg.get(simplefix.TAG_SENDERCOMPID).decode('utf-8')
 
-            print(f"[FIX Server] New Order: {cl_ord_id} {symbol} {side} {order_qty}")
+            self.logger.info(f"New Order: {cl_ord_id} {symbol} {side} {order_qty} @ {price if price else 'MKT'}")
 
             # Map FIX values to our enums
             side_enum = OrderSide.BUY if side == '1' else OrderSide.SELL
@@ -251,14 +299,12 @@ class FIXServer:
                 self.order_callback(order_id)
 
         except Exception as e:
-            print(f"[FIX Server] Error handling new order: {e}")
-            import traceback
-            traceback.print_exc()
+            self.logger.error(f"Error handling new order: {e}", exc_info=True)
 
     def _handle_cancel_request(self, msg, client_socket):
         """Handle Order Cancel Request"""
         # TODO: Implement cancel logic
-        print(f"[FIX Server] Cancel request received")
+        self.logger.info("Cancel request received")
 
     def _send_execution_report(self, client_socket, cl_ord_id, symbol, side,
                                order_qty, ord_type, exec_type='0', ord_status='0',
@@ -303,10 +349,16 @@ class FIXServer:
         try:
             msg.append_time(simplefix.TAG_SENDING_TIME)
             encoded = msg.encode()
+
+            # Log outgoing message
+            msg_type = msg.get(simplefix.TAG_MSGTYPE)
+            self.logger.debug(f"SEND: {encoded}")
+            self.logger.info(f"Sent {self._get_msg_type_name(msg_type)}")
+
             client_socket.send(encoded)
             self.msg_seq_num += 1
         except Exception as e:
-            print(f"[FIX Server] Error sending message: {e}")
+            self.logger.error(f"Error sending message: {e}")
 
     def send_execution_to_client(self, cl_ord_id, sender_comp_id, exec_type,
                                   ord_status, last_qty=None, last_px=None,
@@ -322,13 +374,30 @@ class FIXServer:
                 )
                 break
 
+    def _get_msg_type_name(self, msg_type):
+        """Get human-readable message type name"""
+        msg_types = {
+            simplefix.MSGTYPE_LOGON: 'Logon',
+            simplefix.MSGTYPE_LOGOUT: 'Logout',
+            simplefix.MSGTYPE_HEARTBEAT: 'Heartbeat',
+            simplefix.MSGTYPE_TEST_REQUEST: 'TestRequest',
+            simplefix.MSGTYPE_NEW_ORDER_SINGLE: 'NewOrderSingle',
+            simplefix.MSGTYPE_ORDER_CANCEL_REQUEST: 'OrderCancelRequest',
+            simplefix.MSGTYPE_EXECUTION_REPORT: 'ExecutionReport',
+        }
+        if msg_type:
+            return msg_types.get(msg_type, msg_type.decode('utf-8') if isinstance(msg_type, bytes) else msg_type)
+        return 'Unknown'
+
     def stop(self):
         """Stop the FIX server"""
+        self.logger.info("Stopping FIX server")
         self.running = False
         if self.server_socket:
             self.server_socket.close()
         for client_socket in list(self.clients.keys()):
             client_socket.close()
+        self.logger.info("FIX server stopped")
 
 
 # For testing
@@ -347,5 +416,4 @@ if __name__ == '__main__':
             import time
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\nStopping server...")
         server.stop()
