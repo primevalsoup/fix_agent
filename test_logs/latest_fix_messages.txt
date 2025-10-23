@@ -1,0 +1,153 @@
+2025-10-23 02:20:57,024 - FIXServer - INFO - FIX Server initialized: BROKER on localhost:15002
+2025-10-23 02:20:57,026 - FIXServer - INFO - FIX Server listening on localhost:15002
+2025-10-23 02:20:57,531 - FIXServer - INFO - Client connected from ('127.0.0.1', 35277)
+2025-10-23 02:20:57,534 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:20:57,534 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:20:57,535 - FIXServer - INFO - Sent Logon
+2025-10-23 02:20:57,637 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:20:57,637 - FIXServer - INFO - New Order: EXEC_TEST_001 AAPL 1 100 @ MKT
+2025-10-23 02:20:57,663 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:57,891 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:57,893 - FIXServer - INFO - Client ('127.0.0.1', 35277) disconnected
+2025-10-23 02:20:57,896 - FIXServer - INFO - Client connected from ('127.0.0.1', 56038)
+2025-10-23 02:20:57,898 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:20:57,898 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:20:57,898 - FIXServer - INFO - Sent Logon
+2025-10-23 02:20:58,000 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:20:58,000 - FIXServer - INFO - New Order: PARTIAL_TEST_001 MSFT 2 100 @ 420.0
+2025-10-23 02:20:58,018 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:58,241 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:58,243 - FIXServer - INFO - Client ('127.0.0.1', 56038) disconnected
+2025-10-23 02:20:58,245 - FIXServer - INFO - Client connected from ('127.0.0.1', 30361)
+2025-10-23 02:20:58,247 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:20:58,247 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:20:58,247 - FIXServer - INFO - Sent Logon
+2025-10-23 02:20:58,349 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:20:58,350 - FIXServer - INFO - New Order: MULTI_PARTIAL_001 GOOGL 1 100 @ MKT
+2025-10-23 02:20:58,370 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:58,594 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:58,710 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:58,825 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:58,828 - FIXServer - INFO - Client ('127.0.0.1', 30361) disconnected
+2025-10-23 02:20:58,830 - FIXServer - INFO - Client connected from ('127.0.0.1', 17707)
+2025-10-23 02:20:58,831 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:20:58,831 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:20:58,832 - FIXServer - INFO - Sent Logon
+2025-10-23 02:20:58,933 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:20:58,934 - FIXServer - INFO - New Order: CANCEL_TEST_001 AAPL 1 100 @ 225.0
+2025-10-23 02:20:58,952 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:59,173 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:59,175 - FIXServer - INFO - Client ('127.0.0.1', 17707) disconnected
+2025-10-23 02:20:59,177 - FIXServer - INFO - Client connected from ('127.0.0.1', 59669)
+2025-10-23 02:20:59,179 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:20:59,180 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:20:59,180 - FIXServer - INFO - Sent Logon
+2025-10-23 02:20:59,283 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:20:59,283 - FIXServer - INFO - New Order: REJECT_TEST_001 MSFT 2 50 @ 410.0
+2025-10-23 02:20:59,303 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:59,523 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:59,525 - FIXServer - INFO - Client ('127.0.0.1', 59669) disconnected
+2025-10-23 02:20:59,527 - FIXServer - INFO - Client connected from ('127.0.0.1', 34119)
+2025-10-23 02:20:59,530 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:20:59,530 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:20:59,530 - FIXServer - INFO - Sent Logon
+2025-10-23 02:20:59,633 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:20:59,633 - FIXServer - INFO - New Order: LIMIT_CANCEL_001 AAPL 1 100 @ 220.0
+2025-10-23 02:20:59,653 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:59,854 - FIXServer - INFO - Received OrderCancelRequest from TEST_CLIENT
+2025-10-23 02:20:59,855 - FIXServer - INFO - Cancel request for order LIMIT_CANCEL_001
+2025-10-23 02:20:59,878 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:20:59,878 - FIXServer - INFO - Order LIMIT_CANCEL_001 canceled successfully
+2025-10-23 02:20:59,986 - FIXServer - INFO - Client ('127.0.0.1', 34119) disconnected
+2025-10-23 02:20:59,989 - FIXServer - INFO - Client connected from ('127.0.0.1', 44651)
+2025-10-23 02:20:59,991 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:20:59,991 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:20:59,992 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:00,094 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:21:00,094 - FIXServer - INFO - New Order: PARTIAL_CANCEL_001 MSFT 2 100 @ 420.0
+2025-10-23 02:21:00,115 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:00,437 - FIXServer - INFO - Received OrderCancelRequest from TEST_CLIENT
+2025-10-23 02:21:00,437 - FIXServer - INFO - Cancel request for order PARTIAL_CANCEL_001
+2025-10-23 02:21:00,472 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:00,472 - FIXServer - INFO - Order PARTIAL_CANCEL_001 canceled successfully
+2025-10-23 02:21:00,474 - FIXServer - INFO - Client ('127.0.0.1', 44651) disconnected
+2025-10-23 02:21:00,476 - FIXServer - INFO - Client connected from ('127.0.0.1', 17940)
+2025-10-23 02:21:00,478 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:21:00,478 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:21:00,479 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:00,580 - FIXServer - INFO - Received OrderCancelRequest from TEST_CLIENT
+2025-10-23 02:21:00,580 - FIXServer - INFO - Cancel request for order NONEXISTENT_ORDER
+2025-10-23 02:21:00,586 - FIXServer - INFO - Sent 9
+2025-10-23 02:21:00,586 - FIXServer - INFO - Sent OrderCancelReject for NONEXISTENT_ORDER: Order not found
+2025-10-23 02:21:00,588 - FIXServer - INFO - Client ('127.0.0.1', 17940) disconnected
+2025-10-23 02:21:00,590 - FIXServer - INFO - Client connected from ('127.0.0.1', 23081)
+2025-10-23 02:21:00,592 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:21:00,592 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:21:00,593 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:00,695 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:21:00,695 - FIXServer - INFO - New Order: FILLED_CANCEL_001 GOOGL 1 50 @ MKT
+2025-10-23 02:21:00,712 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:01,035 - FIXServer - INFO - Received OrderCancelRequest from TEST_CLIENT
+2025-10-23 02:21:01,035 - FIXServer - INFO - Cancel request for order FILLED_CANCEL_001
+2025-10-23 02:21:01,041 - FIXServer - INFO - Sent 9
+2025-10-23 02:21:01,041 - FIXServer - INFO - Sent OrderCancelReject for FILLED_CANCEL_001: Order already FILLED
+2025-10-23 02:21:01,043 - FIXServer - INFO - Client ('127.0.0.1', 23081) disconnected
+2025-10-23 02:21:01,045 - FIXServer - INFO - Client connected from ('127.0.0.1', 21181)
+2025-10-23 02:21:01,047 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:21:01,047 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:21:01,048 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:01,150 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:21:01,151 - FIXServer - INFO - New Order: AMEND_QTY_001 AAPL 1 100 @ 225.0
+2025-10-23 02:21:01,168 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:01,370 - FIXServer - INFO - Received G from TEST_CLIENT
+2025-10-23 02:21:01,370 - FIXServer - INFO - Cancel/Replace request for order AMEND_QTY_001 -> AMEND_QTY_001_V2
+2025-10-23 02:21:01,389 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:01,390 - FIXServer - INFO - Order AMEND_QTY_001 amended: qty 100->150, price 225.0->225.0
+2025-10-23 02:21:01,498 - FIXServer - INFO - Client ('127.0.0.1', 21181) disconnected
+2025-10-23 02:21:01,500 - FIXServer - INFO - Client connected from ('127.0.0.1', 46517)
+2025-10-23 02:21:01,503 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:21:01,504 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:21:01,504 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:01,606 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:21:01,606 - FIXServer - INFO - New Order: AMEND_PRICE_001 MSFT 2 50 @ 420.0
+2025-10-23 02:21:01,625 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:01,827 - FIXServer - INFO - Received G from TEST_CLIENT
+2025-10-23 02:21:01,827 - FIXServer - INFO - Cancel/Replace request for order AMEND_PRICE_001 -> AMEND_PRICE_001_V2
+2025-10-23 02:21:01,848 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:01,848 - FIXServer - INFO - Order AMEND_PRICE_001 amended: qty 50->50, price 420.0->415.0
+2025-10-23 02:21:01,954 - FIXServer - INFO - Client ('127.0.0.1', 46517) disconnected
+2025-10-23 02:21:01,956 - FIXServer - INFO - Client connected from ('127.0.0.1', 59755)
+2025-10-23 02:21:01,958 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:21:01,958 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:21:01,958 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:02,060 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:21:02,060 - FIXServer - INFO - New Order: AMEND_BOTH_001 GOOGL 1 100 @ 165.0
+2025-10-23 02:21:02,077 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:02,279 - FIXServer - INFO - Received G from TEST_CLIENT
+2025-10-23 02:21:02,279 - FIXServer - INFO - Cancel/Replace request for order AMEND_BOTH_001 -> AMEND_BOTH_001_V2
+2025-10-23 02:21:02,299 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:02,299 - FIXServer - INFO - Order AMEND_BOTH_001 amended: qty 100->75, price 165.0->170.0
+2025-10-23 02:21:02,407 - FIXServer - INFO - Client ('127.0.0.1', 59755) disconnected
+2025-10-23 02:21:02,409 - FIXServer - INFO - Client connected from ('127.0.0.1', 63389)
+2025-10-23 02:21:02,411 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:21:02,411 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:21:02,411 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:02,513 - FIXServer - INFO - Received G from TEST_CLIENT
+2025-10-23 02:21:02,513 - FIXServer - INFO - Cancel/Replace request for order NONEXISTENT -> NONEXISTENT_V2
+2025-10-23 02:21:02,521 - FIXServer - INFO - Sent 9
+2025-10-23 02:21:02,522 - FIXServer - INFO - Sent OrderCancelReject for NONEXISTENT: Order not found
+2025-10-23 02:21:02,523 - FIXServer - INFO - Client ('127.0.0.1', 63389) disconnected
+2025-10-23 02:21:02,525 - FIXServer - INFO - Client connected from ('127.0.0.1', 65498)
+2025-10-23 02:21:02,526 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 02:21:02,527 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 02:21:02,527 - FIXServer - INFO - Sent Logon
+2025-10-23 02:21:02,629 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 02:21:02,629 - FIXServer - INFO - New Order: AMEND_FILLED_001 AAPL 1 50 @ MKT
+2025-10-23 02:21:02,646 - FIXServer - INFO - Sent ExecutionReport
+2025-10-23 02:21:02,966 - FIXServer - INFO - Received G from TEST_CLIENT
+2025-10-23 02:21:02,966 - FIXServer - INFO - Cancel/Replace request for order AMEND_FILLED_001 -> AMEND_FILLED_001_V2
+2025-10-23 02:21:02,971 - FIXServer - INFO - Sent 9
+2025-10-23 02:21:02,971 - FIXServer - INFO - Sent OrderCancelReject for AMEND_FILLED_001: Order already FILLED
+2025-10-23 02:21:02,972 - FIXServer - INFO - Stopping FIX server
+2025-10-23 02:21:02,973 - FIXServer - INFO - Client ('127.0.0.1', 65498) disconnected
+2025-10-23 02:21:02,973 - FIXServer - INFO - FIX server stopped
