@@ -1,0 +1,134 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.14, pytest-8.4.2, pluggy-1.6.0 -- /home/user/fix_agent/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/user/fix_agent
+configfile: pyproject.toml
+plugins: asyncio-1.2.0, mock-3.15.1, cov-7.0.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 12 items
+
+tests/broker/test_fix_integration.py::TestFIXConnection::test_connect_to_server 2025-10-22 23:57:50,243 - FIXServer - INFO - FIX Server initialized: BROKER on localhost:15001
+2025-10-22 23:57:50,244 - FIXServer - INFO - FIX Server listening on localhost:15001
+PASSED2025-10-22 23:57:50,749 - FIXServer - INFO - Client connected from ('127.0.0.1', 29962)
+
+tests/broker/test_fix_integration.py::TestFIXConnection::test_logon 2025-10-22 23:57:50,752 - FIXServer - INFO - Client ('127.0.0.1', 29962) disconnected
+2025-10-22 23:57:50,753 - FIXServer - INFO - Client connected from ('127.0.0.1', 55705)
+2025-10-22 23:57:50,754 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:50,754 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:50,755 - FIXServer - INFO - Sent Logon
+PASSED
+tests/broker/test_fix_integration.py::TestFIXConnection::test_heartbeat 2025-10-22 23:57:50,756 - FIXServer - INFO - Client ('127.0.0.1', 55705) disconnected
+2025-10-22 23:57:50,757 - FIXServer - INFO - Client connected from ('127.0.0.1', 19110)
+2025-10-22 23:57:50,759 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:50,759 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:50,759 - FIXServer - INFO - Sent Logon
+PASSED2025-10-22 23:57:50,760 - FIXServer - INFO - Received Heartbeat from TEST_CLIENT
+
+tests/broker/test_fix_integration.py::TestFIXOrderSubmission::test_submit_market_order 2025-10-22 23:57:50,761 - FIXServer - INFO - Client ('127.0.0.1', 19110) disconnected
+2025-10-22 23:57:50,762 - FIXServer - INFO - Client connected from ('127.0.0.1', 55151)
+2025-10-22 23:57:50,763 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:50,763 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:50,764 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:50,865 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:50,865 - FIXServer - INFO - New Order: TEST_MARKET_001 AAPL 1 100 @ MKT
+2025-10-22 23:57:50,886 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXOrderSubmission::test_submit_limit_order 2025-10-22 23:57:50,994 - FIXServer - INFO - Client ('127.0.0.1', 55151) disconnected
+2025-10-22 23:57:50,996 - FIXServer - INFO - Client connected from ('127.0.0.1', 59392)
+2025-10-22 23:57:50,997 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:50,997 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:50,998 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:51,099 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:51,100 - FIXServer - INFO - New Order: TEST_LIMIT_001 MSFT 2 50 @ 430.0
+2025-10-22 23:57:51,117 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXOrderSubmission::test_multiple_orders 2025-10-22 23:57:51,224 - FIXServer - INFO - Client ('127.0.0.1', 59392) disconnected
+2025-10-22 23:57:51,226 - FIXServer - INFO - Client connected from ('127.0.0.1', 37829)
+2025-10-22 23:57:51,227 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:51,227 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:51,228 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:51,329 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:51,329 - FIXServer - INFO - New Order: MULTI_0 AAPL 1 100 @ MKT
+2025-10-22 23:57:51,345 - FIXServer - INFO - Sent ExecutionReport
+2025-10-22 23:57:51,396 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:51,396 - FIXServer - INFO - New Order: MULTI_1 MSFT 2 50 @ MKT
+2025-10-22 23:57:51,412 - FIXServer - INFO - Sent ExecutionReport
+2025-10-22 23:57:51,463 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:51,464 - FIXServer - INFO - New Order: MULTI_2 GOOGL 1 75 @ MKT
+2025-10-22 23:57:51,479 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXOrderTypes::test_day_order 2025-10-22 23:57:51,637 - FIXServer - INFO - Client ('127.0.0.1', 37829) disconnected
+2025-10-22 23:57:51,638 - FIXServer - INFO - Client connected from ('127.0.0.1', 42056)
+2025-10-22 23:57:51,640 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:51,640 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:51,640 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:51,742 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:51,743 - FIXServer - INFO - New Order: TEST_DAY AAPL 1 100 @ MKT
+2025-10-22 23:57:51,758 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXOrderTypes::test_gtc_order 2025-10-22 23:57:51,865 - FIXServer - INFO - Client ('127.0.0.1', 42056) disconnected
+2025-10-22 23:57:51,866 - FIXServer - INFO - Client connected from ('127.0.0.1', 28302)
+2025-10-22 23:57:51,867 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:51,868 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:51,868 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:51,970 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:51,970 - FIXServer - INFO - New Order: TEST_GTC MSFT 2 50 @ 420.0
+2025-10-22 23:57:51,985 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXOrderTypes::test_ioc_order 2025-10-22 23:57:52,092 - FIXServer - INFO - Client ('127.0.0.1', 28302) disconnected
+2025-10-22 23:57:52,093 - FIXServer - INFO - Client connected from ('127.0.0.1', 23757)
+2025-10-22 23:57:52,094 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:52,094 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:52,095 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:52,196 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:52,197 - FIXServer - INFO - New Order: TEST_IOC GOOGL 1 25 @ 145.0
+2025-10-22 23:57:52,211 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXOrderTypes::test_fok_order 2025-10-22 23:57:52,319 - FIXServer - INFO - Client ('127.0.0.1', 23757) disconnected
+2025-10-22 23:57:52,320 - FIXServer - INFO - Client connected from ('127.0.0.1', 53879)
+2025-10-22 23:57:52,321 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:52,322 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:52,322 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:52,424 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:52,424 - FIXServer - INFO - New Order: TEST_FOK AAPL 2 200 @ 148.0
+2025-10-22 23:57:52,440 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXMessageFlow::test_order_lifecycle 2025-10-22 23:57:52,547 - FIXServer - INFO - Client ('127.0.0.1', 53879) disconnected
+2025-10-22 23:57:52,549 - FIXServer - INFO - Client connected from ('127.0.0.1', 49721)
+2025-10-22 23:57:52,550 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:52,550 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:52,551 - FIXServer - INFO - Sent Logon
+2025-10-22 23:57:52,652 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-22 23:57:52,653 - FIXServer - INFO - New Order: LIFECYCLE_001 AAPL 1 100 @ MKT
+2025-10-22 23:57:52,674 - FIXServer - INFO - Sent ExecutionReport
+PASSED
+tests/broker/test_fix_integration.py::TestFIXMessageFlow::test_sender_target_fields 2025-10-22 23:57:52,781 - FIXServer - INFO - Client ('127.0.0.1', 49721) disconnected
+2025-10-22 23:57:52,782 - FIXServer - INFO - Client connected from ('127.0.0.1', 54466)
+2025-10-22 23:57:52,783 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-22 23:57:52,784 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-22 23:57:52,784 - FIXServer - INFO - Sent Logon
+PASSED2025-10-22 23:57:52,785 - FIXServer - INFO - Stopping FIX server
+2025-10-22 23:57:52,785 - FIXServer - INFO - Client ('127.0.0.1', 54466) disconnected
+2025-10-22 23:57:52,785 - FIXServer - INFO - FIX server stopped
+
+
+=============================== warnings summary ===============================
+broker/models.py:10
+  /home/user/fix_agent/broker/models.py:10: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+    Base = declarative_base()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+_______________ coverage: platform linux, python 3.11.14-final-0 _______________
+
+Name                   Stmts   Miss  Cover   Missing
+----------------------------------------------------
+broker/__init__.py         0      0   100%
+broker/app.py            181    181     0%   5-397
+broker/fix_server.py     239     54    77%   19, 66, 96-98, 129-135, 156, 159-165, 193-194, 203-215, 236, 286-289, 294, 323, 325, 348-349, 357-363, 378, 393-407
+broker/models.py          69      2    97%   82, 104
+client/__init__.py         0      0   100%
+client/models.py          63     63     0%   4-110
+----------------------------------------------------
+TOTAL                    552    300    46%
+======================== 12 passed, 1 warning in 3.35s =========================
