@@ -55,6 +55,7 @@ class FIXServer:
         self.sender_comp_id = sender_comp_id
         self.running = False
         self.clients = {}  # {socket: {'target_comp_id': str, 'msg_seq_num': int}}
+        self.order_sockets = {}  # {cl_ord_id: client_socket} - track which socket each order came from
         self.server_socket = None
         self.msg_seq_num = 1
         self.order_callback = None  # Callback when order is received
@@ -140,6 +141,11 @@ class FIXServer:
         client_socket.close()
         if client_socket in self.clients:
             del self.clients[client_socket]
+
+        # Clean up order socket mappings
+        orders_to_remove = [cl_ord_id for cl_ord_id, sock in self.order_sockets.items() if sock == client_socket]
+        for cl_ord_id in orders_to_remove:
+            del self.order_sockets[cl_ord_id]
 
     def _process_message_obj(self, msg, client_socket):
         """Process a parsed FIX message object"""
@@ -272,6 +278,9 @@ class FIXServer:
             order_id = order.id
             session.close()
 
+            # Track which socket this order came from
+            self.order_sockets[cl_ord_id] = client_socket
+
             # Send Execution Report (New)
             self._send_execution_report(
                 client_socket,
@@ -356,14 +365,24 @@ class FIXServer:
                                   cum_qty=0, avg_px=0, symbol='', side='',
                                   order_qty=0, ord_type=''):
         """Send execution report to specific client (called from external code)"""
-        # Find client socket by sender_comp_id
-        for client_socket, client_info in self.clients.items():
-            if client_info['target_comp_id'] == sender_comp_id:
-                self._send_execution_report(
-                    client_socket, cl_ord_id, symbol, side, order_qty, ord_type,
-                    exec_type, ord_status, last_qty, last_px, cum_qty, avg_px
-                )
-                break
+        # First try to find client socket using the order_sockets mapping
+        client_socket = self.order_sockets.get(cl_ord_id)
+
+        # If not found, try to find by sender_comp_id
+        if client_socket is None or client_socket not in self.clients:
+            for socket, client_info in self.clients.items():
+                if client_info['target_comp_id'] == sender_comp_id:
+                    client_socket = socket
+                    break
+
+        # Send execution report if socket found
+        if client_socket and client_socket in self.clients:
+            self._send_execution_report(
+                client_socket, cl_ord_id, symbol, side, order_qty, ord_type,
+                exec_type, ord_status, last_qty, last_px, cum_qty, avg_px
+            )
+        else:
+            self.logger.warning(f"Cannot send execution report for {cl_ord_id}: client not connected")
 
     def _get_msg_type_name(self, msg_type):
         """Get human-readable message type name"""
