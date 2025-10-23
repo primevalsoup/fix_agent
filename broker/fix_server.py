@@ -167,6 +167,8 @@ class FIXServer:
                 self._handle_new_order(msg, client_socket)
             elif msg_type == simplefix.MSGTYPE_ORDER_CANCEL_REQUEST:
                 self._handle_cancel_request(msg, client_socket)
+            elif msg_type == simplefix.MSGTYPE_ORDER_CANCEL_REPLACE_REQUEST:
+                self._handle_cancel_replace_request(msg, client_socket)
             else:
                 self.logger.warning(f"Unknown message type: {msg_type}")
 
@@ -301,9 +303,195 @@ class FIXServer:
             self.logger.error(f"Error handling new order: {e}", exc_info=True)
 
     def _handle_cancel_request(self, msg, client_socket):
-        """Handle Order Cancel Request"""
-        # TODO: Implement cancel logic
-        self.logger.info("Cancel request received")
+        """Handle Order Cancel Request (MsgType=F)"""
+        try:
+            # Extract fields
+            orig_cl_ord_id = msg.get(41)  # OrigClOrdID - the order to cancel
+            cl_ord_id = msg.get(simplefix.TAG_CLORDID)  # New ClOrdID for this cancel request
+            symbol = msg.get(simplefix.TAG_SYMBOL)
+            side = msg.get(simplefix.TAG_SIDE)
+
+            if not orig_cl_ord_id:
+                self.logger.error("Cancel request missing OrigClOrdID")
+                return
+
+            orig_cl_ord_id = orig_cl_ord_id.decode('utf-8')
+            cl_ord_id = cl_ord_id.decode('utf-8') if cl_ord_id else orig_cl_ord_id
+            symbol = symbol.decode('utf-8') if symbol else ''
+            side = side.decode('utf-8') if side else ''
+
+            self.logger.info(f"Cancel request for order {orig_cl_ord_id}")
+
+            # Find order in database
+            session = get_session()
+            order = session.query(Order).filter_by(cl_ord_id=orig_cl_ord_id).first()
+
+            if not order:
+                # Order not found - send cancel reject
+                self._send_cancel_reject(
+                    client_socket, orig_cl_ord_id, cl_ord_id,
+                    reason="1",  # Unknown order
+                    text="Order not found"
+                )
+                session.close()
+                return
+
+            # Check if order can be canceled
+            if order.status in [OrderStatus.FILLED, OrderStatus.CANCELED, OrderStatus.REJECTED]:
+                # Too late to cancel
+                self._send_cancel_reject(
+                    client_socket, orig_cl_ord_id, cl_ord_id,
+                    reason="0",  # Too late to cancel
+                    text=f"Order already {order.status.value}"
+                )
+                session.close()
+                return
+
+            # Cancel the order
+            order.status = OrderStatus.CANCELED
+            session.commit()
+
+            # Get order details for execution report
+            order_symbol = order.symbol
+            order_side = '1' if order.side == OrderSide.BUY else '2'
+            order_qty = order.quantity
+            order_type = '1' if order.order_type == OrderType.MARKET else '2'
+            cum_qty = order.filled_quantity
+
+            session.close()
+
+            # Send ExecutionReport (Canceled)
+            self._send_execution_report(
+                client_socket,
+                orig_cl_ord_id,
+                order_symbol,
+                order_side,
+                order_qty,
+                order_type,
+                exec_type='4',  # Canceled
+                ord_status='4',  # Canceled
+                cum_qty=cum_qty,
+                avg_px=0
+            )
+
+            self.logger.info(f"Order {orig_cl_ord_id} canceled successfully")
+
+        except Exception as e:
+            self.logger.error(f"Error handling cancel request: {e}", exc_info=True)
+
+    def _handle_cancel_replace_request(self, msg, client_socket):
+        """Handle Order Cancel/Replace Request (MsgType=G) - Amend order"""
+        try:
+            # Extract fields
+            orig_cl_ord_id = msg.get(41)  # OrigClOrdID - the order to amend
+            cl_ord_id = msg.get(simplefix.TAG_CLORDID)  # New ClOrdID for amended order
+            symbol = msg.get(simplefix.TAG_SYMBOL)
+            side = msg.get(simplefix.TAG_SIDE)
+            order_qty = msg.get(simplefix.TAG_ORDERQTY)
+            ord_type = msg.get(simplefix.TAG_ORDTYPE)
+            price = msg.get(44)  # Price (for limit orders)
+
+            if not orig_cl_ord_id or not cl_ord_id:
+                self.logger.error("Cancel/Replace request missing OrigClOrdID or ClOrdID")
+                return
+
+            orig_cl_ord_id = orig_cl_ord_id.decode('utf-8')
+            cl_ord_id = cl_ord_id.decode('utf-8')
+            symbol = symbol.decode('utf-8') if symbol else ''
+            side = side.decode('utf-8') if side else ''
+            order_qty = int(order_qty.decode('utf-8')) if order_qty else 0
+            ord_type = ord_type.decode('utf-8') if ord_type else '1'
+            price = float(price.decode('utf-8')) if price else None
+
+            self.logger.info(f"Cancel/Replace request for order {orig_cl_ord_id} -> {cl_ord_id}")
+
+            # Find original order
+            session = get_session()
+            order = session.query(Order).filter_by(cl_ord_id=orig_cl_ord_id).first()
+
+            if not order:
+                # Order not found
+                self._send_cancel_reject(
+                    client_socket, orig_cl_ord_id, cl_ord_id,
+                    reason="1",  # Unknown order
+                    text="Order not found"
+                )
+                session.close()
+                return
+
+            # Check if order can be amended
+            if order.status in [OrderStatus.FILLED, OrderStatus.CANCELED, OrderStatus.REJECTED]:
+                self._send_cancel_reject(
+                    client_socket, orig_cl_ord_id, cl_ord_id,
+                    reason="0",  # Too late to cancel
+                    text=f"Order already {order.status.value}"
+                )
+                session.close()
+                return
+
+            # Update order
+            old_qty = order.quantity
+            old_price = order.limit_price
+
+            order.cl_ord_id = cl_ord_id  # Update to new ClOrdID
+            order.quantity = order_qty
+            order.remaining_quantity = order_qty - order.filled_quantity
+            if price is not None:
+                order.limit_price = price
+
+            session.commit()
+
+            # Get order details for execution report
+            order_symbol = order.symbol
+            order_side = '1' if order.side == OrderSide.BUY else '2'
+            cum_qty = order.filled_quantity
+
+            session.close()
+
+            # Update order socket mapping to new ClOrdID
+            if orig_cl_ord_id in self.order_sockets:
+                self.order_sockets[cl_ord_id] = self.order_sockets[orig_cl_ord_id]
+                del self.order_sockets[orig_cl_ord_id]
+
+            # Send ExecutionReport (Replaced)
+            self._send_execution_report(
+                client_socket,
+                cl_ord_id,
+                order_symbol,
+                order_side,
+                order_qty,
+                ord_type,
+                exec_type='5',  # Replaced
+                ord_status='0',  # New (amended order is treated as new)
+                cum_qty=cum_qty,
+                avg_px=0
+            )
+
+            self.logger.info(f"Order {orig_cl_ord_id} amended: qty {old_qty}->{order_qty}, price {old_price}->{price}")
+
+        except Exception as e:
+            self.logger.error(f"Error handling cancel/replace request: {e}", exc_info=True)
+
+    def _send_cancel_reject(self, client_socket, orig_cl_ord_id, cl_ord_id, reason="0", text=""):
+        """Send OrderCancelReject message (MsgType=9)"""
+        target_comp_id = self.clients[client_socket]['target_comp_id']
+
+        msg = simplefix.FixMessage()
+        msg.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
+        msg.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_ORDER_CANCEL_REJECT)
+        msg.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
+        msg.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
+        msg.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
+
+        msg.append_pair(simplefix.TAG_CLORDID, cl_ord_id)
+        msg.append_pair(41, orig_cl_ord_id)  # OrigClOrdID
+        msg.append_pair(39, '0')  # OrdStatus
+        msg.append_pair(434, reason)  # CxlRejReason: 0=Too late, 1=Unknown order
+        if text:
+            msg.append_pair(58, text)  # Text
+
+        self._send_message(msg, client_socket)
+        self.logger.info(f"Sent OrderCancelReject for {orig_cl_ord_id}: {text}")
 
     def _send_execution_report(self, client_socket, cl_ord_id, symbol, side,
                                order_qty, ord_type, exec_type='0', ord_status='0',

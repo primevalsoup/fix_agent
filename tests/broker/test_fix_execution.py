@@ -106,6 +106,68 @@ class FIXTestClient:
         # Receive ExecutionReport
         return self._receive_message()
 
+    def send_cancel_request(self, orig_cl_ord_id, symbol, side, cl_ord_id=None):
+        """Send OrderCancelRequest (MsgType=F)"""
+        if cl_ord_id is None:
+            cl_ord_id = f"CANCEL_{orig_cl_ord_id}"
+
+        msg = simplefix.FixMessage()
+        msg.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
+        msg.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_ORDER_CANCEL_REQUEST)
+        msg.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
+        msg.append_pair(simplefix.TAG_TARGET_COMPID, self.target_comp_id)
+        msg.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
+        msg.append_utc_timestamp(simplefix.TAG_SENDING_TIME)
+
+        msg.append_pair(41, orig_cl_ord_id)  # OrigClOrdID
+        msg.append_pair(simplefix.TAG_CLORDID, cl_ord_id)
+        msg.append_pair(simplefix.TAG_SYMBOL, symbol)
+        msg.append_pair(simplefix.TAG_SIDE, '1' if side == 'BUY' else '2')
+        msg.append_utc_timestamp(60)  # TransactTime
+
+        self.socket.send(msg.encode())
+        self.msg_seq_num += 1
+
+        # Receive response (ExecutionReport or CancelReject)
+        return self._receive_message()
+
+    def send_cancel_replace_request(self, orig_cl_ord_id, symbol, side, quantity,
+                                     cl_ord_id=None, price=None, order_type='LIMIT'):
+        """Send OrderCancelReplaceRequest (MsgType=G) - Amend order"""
+        if cl_ord_id is None:
+            cl_ord_id = f"AMEND_{orig_cl_ord_id}"
+
+        msg = simplefix.FixMessage()
+        msg.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
+        msg.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_ORDER_CANCEL_REPLACE_REQUEST)
+        msg.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
+        msg.append_pair(simplefix.TAG_TARGET_COMPID, self.target_comp_id)
+        msg.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
+        msg.append_utc_timestamp(simplefix.TAG_SENDING_TIME)
+
+        msg.append_pair(41, orig_cl_ord_id)  # OrigClOrdID
+        msg.append_pair(simplefix.TAG_CLORDID, cl_ord_id)
+        msg.append_pair(21, 1)  # HandlInst
+        msg.append_pair(simplefix.TAG_SYMBOL, symbol)
+        msg.append_pair(simplefix.TAG_SIDE, '1' if side == 'BUY' else '2')
+        msg.append_utc_timestamp(60)  # TransactTime
+
+        # Order type
+        if order_type == 'MARKET':
+            msg.append_pair(simplefix.TAG_ORDTYPE, '1')
+        else:
+            msg.append_pair(simplefix.TAG_ORDTYPE, '2')
+            if price:
+                msg.append_pair(44, str(price))  # Price
+
+        msg.append_pair(simplefix.TAG_ORDERQTY, quantity)
+
+        self.socket.send(msg.encode())
+        self.msg_seq_num += 1
+
+        # Receive response (ExecutionReport or CancelReject)
+        return self._receive_message()
+
     def _receive_message(self, timeout=2):
         """Receive and parse FIX message"""
         buffer = b''
@@ -581,3 +643,380 @@ class TestOrderRejection:
         assert exec_report is not None
         assert exec_report.get(150) == b'8'  # ExecType: Rejected
         assert exec_report.get(39) == b'8'  # OrdStatus: Rejected
+
+
+class TestClientInitiatedCancel:
+    """Test client-initiated order cancellation"""
+
+    def test_cancel_unfilled_order(self, fix_client, fix_server):
+        """Test client canceling an order that hasn't been executed"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Submit limit order
+        orig_cl_ord_id = "LIMIT_CANCEL_001"
+        response = fix_client.send_new_order(
+            symbol='AAPL',
+            side='BUY',
+            quantity=100,
+            order_type='LIMIT',
+            price=220.00,
+            cl_ord_id=orig_cl_ord_id
+        )
+
+        # Verify order accepted
+        assert response is not None
+        assert response.get(39) == b'0'  # OrdStatus: New
+
+        time.sleep(0.2)
+
+        # Client sends cancel request
+        cancel_response = fix_client.send_cancel_request(
+            orig_cl_ord_id=orig_cl_ord_id,
+            symbol='AAPL',
+            side='BUY'
+        )
+
+        # Should receive ExecutionReport with Canceled status
+        assert cancel_response is not None
+        assert cancel_response.get(simplefix.TAG_MSGTYPE) == simplefix.MSGTYPE_EXECUTION_REPORT
+        assert cancel_response.get(150) == b'4'  # ExecType: Canceled
+        assert cancel_response.get(39) == b'4'  # OrdStatus: Canceled
+
+        # Verify order in database is canceled
+        time.sleep(0.1)
+        session = get_session(db_path)
+        order = session.query(Order).filter_by(cl_ord_id=orig_cl_ord_id).first()
+        assert order is not None
+        assert order.status == OrderStatus.CANCELED
+        session.close()
+
+    def test_cancel_partially_filled_order(self, fix_client, fix_server):
+        """Test canceling a partially filled order"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Submit order
+        orig_cl_ord_id = "PARTIAL_CANCEL_001"
+        fix_client.send_new_order(
+            symbol='MSFT',
+            side='SELL',
+            quantity=100,
+            order_type='LIMIT',
+            price=420.00,
+            cl_ord_id=orig_cl_ord_id
+        )
+
+        time.sleep(0.2)
+
+        # Partially fill the order (30 shares)
+        session = get_session(db_path)
+        order = session.query(Order).filter_by(cl_ord_id=orig_cl_ord_id).first()
+        exec1 = Execution(order_id=order.id, exec_id=f"EXEC_{orig_cl_ord_id}_1",
+                         exec_quantity=30, exec_price=420.00)
+        session.add(exec1)
+        order.filled_quantity = 30
+        order.remaining_quantity = 70
+        order.status = OrderStatus.PARTIALLY_FILLED
+        session.commit()
+        session.close()
+
+        time.sleep(0.1)
+
+        # Client cancels the remaining quantity
+        cancel_response = fix_client.send_cancel_request(
+            orig_cl_ord_id=orig_cl_ord_id,
+            symbol='MSFT',
+            side='SELL'
+        )
+
+        # Should receive ExecutionReport with Canceled status
+        assert cancel_response is not None
+        assert cancel_response.get(150) == b'4'  # ExecType: Canceled
+        assert cancel_response.get(39) == b'4'  # OrdStatus: Canceled
+        assert cancel_response.get(14) == b'30'  # CumQty: still 30 filled
+
+    def test_cancel_nonexistent_order(self, fix_client, fix_server):
+        """Test canceling an order that doesn't exist"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Try to cancel non-existent order
+        cancel_response = fix_client.send_cancel_request(
+            orig_cl_ord_id="NONEXISTENT_ORDER",
+            symbol='AAPL',
+            side='BUY'
+        )
+
+        # Should receive OrderCancelReject
+        assert cancel_response is not None
+        assert cancel_response.get(simplefix.TAG_MSGTYPE) == simplefix.MSGTYPE_ORDER_CANCEL_REJECT
+        assert cancel_response.get(434) == b'1'  # CxlRejReason: Unknown order
+
+    def test_cancel_already_filled_order(self, fix_client, fix_server):
+        """Test trying to cancel an order that's already filled"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Submit order
+        orig_cl_ord_id = "FILLED_CANCEL_001"
+        fix_client.send_new_order(
+            symbol='GOOGL',
+            side='BUY',
+            quantity=50,
+            order_type='MARKET',
+            cl_ord_id=orig_cl_ord_id
+        )
+
+        time.sleep(0.2)
+
+        # Fill the order completely
+        session = get_session(db_path)
+        order = session.query(Order).filter_by(cl_ord_id=orig_cl_ord_id).first()
+        stock = session.query(Stock).filter_by(symbol='GOOGL').first()
+        exec1 = Execution(order_id=order.id, exec_id=f"EXEC_{orig_cl_ord_id}_1",
+                         exec_quantity=50, exec_price=stock.last_price)
+        session.add(exec1)
+        order.filled_quantity = 50
+        order.remaining_quantity = 0
+        order.status = OrderStatus.FILLED
+        session.commit()
+        session.close()
+
+        time.sleep(0.1)
+
+        # Try to cancel filled order
+        cancel_response = fix_client.send_cancel_request(
+            orig_cl_ord_id=orig_cl_ord_id,
+            symbol='GOOGL',
+            side='BUY'
+        )
+
+        # Should receive OrderCancelReject (too late)
+        assert cancel_response is not None
+        assert cancel_response.get(simplefix.TAG_MSGTYPE) == simplefix.MSGTYPE_ORDER_CANCEL_REJECT
+        assert cancel_response.get(434) == b'0'  # CxlRejReason: Too late to cancel
+
+
+class TestOrderAmendment:
+    """Test order amendment via cancel/replace"""
+
+    def test_amend_quantity(self, fix_client, fix_server):
+        """Test amending order quantity"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Submit original order
+        orig_cl_ord_id = "AMEND_QTY_001"
+        response = fix_client.send_new_order(
+            symbol='AAPL',
+            side='BUY',
+            quantity=100,
+            order_type='LIMIT',
+            price=225.00,
+            cl_ord_id=orig_cl_ord_id
+        )
+
+        assert response is not None
+        assert response.get(39) == b'0'  # OrdStatus: New
+
+        time.sleep(0.2)
+
+        # Amend quantity from 100 to 150
+        new_cl_ord_id = "AMEND_QTY_001_V2"
+        amend_response = fix_client.send_cancel_replace_request(
+            orig_cl_ord_id=orig_cl_ord_id,
+            symbol='AAPL',
+            side='BUY',
+            quantity=150,
+            price=225.00,
+            cl_ord_id=new_cl_ord_id
+        )
+
+        # Should receive ExecutionReport with Replaced status
+        assert amend_response is not None
+        assert amend_response.get(simplefix.TAG_MSGTYPE) == simplefix.MSGTYPE_EXECUTION_REPORT
+        assert amend_response.get(150) == b'5'  # ExecType: Replaced
+        assert amend_response.get(39) == b'0'  # OrdStatus: New
+        assert amend_response.get(simplefix.TAG_CLORDID) == new_cl_ord_id.encode('utf-8')
+        assert amend_response.get(simplefix.TAG_ORDERQTY) == b'150'
+
+        # Verify order in database is updated
+        time.sleep(0.1)
+        session = get_session(db_path)
+        order = session.query(Order).filter_by(cl_ord_id=new_cl_ord_id).first()
+        assert order is not None
+        assert order.quantity == 150
+        assert order.remaining_quantity == 150
+        assert order.status == OrderStatus.NEW
+
+        # Original order ID should not exist anymore
+        old_order = session.query(Order).filter_by(cl_ord_id=orig_cl_ord_id).first()
+        assert old_order is None
+
+        session.close()
+
+    def test_amend_price(self, fix_client, fix_server):
+        """Test amending order price"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Submit original order
+        orig_cl_ord_id = "AMEND_PRICE_001"
+        fix_client.send_new_order(
+            symbol='MSFT',
+            side='SELL',
+            quantity=50,
+            order_type='LIMIT',
+            price=420.00,
+            cl_ord_id=orig_cl_ord_id
+        )
+
+        time.sleep(0.2)
+
+        # Amend price from 420.00 to 415.00
+        new_cl_ord_id = "AMEND_PRICE_001_V2"
+        amend_response = fix_client.send_cancel_replace_request(
+            orig_cl_ord_id=orig_cl_ord_id,
+            symbol='MSFT',
+            side='SELL',
+            quantity=50,
+            price=415.00,
+            cl_ord_id=new_cl_ord_id
+        )
+
+        assert amend_response is not None
+        assert amend_response.get(150) == b'5'  # ExecType: Replaced
+
+        # Verify price updated in database
+        time.sleep(0.1)
+        session = get_session(db_path)
+        order = session.query(Order).filter_by(cl_ord_id=new_cl_ord_id).first()
+        assert order is not None
+        assert order.limit_price == 415.00
+        session.close()
+
+    def test_amend_both_quantity_and_price(self, fix_client, fix_server):
+        """Test amending both quantity and price"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Submit original order
+        orig_cl_ord_id = "AMEND_BOTH_001"
+        fix_client.send_new_order(
+            symbol='GOOGL',
+            side='BUY',
+            quantity=100,
+            order_type='LIMIT',
+            price=165.00,
+            cl_ord_id=orig_cl_ord_id
+        )
+
+        time.sleep(0.2)
+
+        # Amend both qty and price
+        new_cl_ord_id = "AMEND_BOTH_001_V2"
+        amend_response = fix_client.send_cancel_replace_request(
+            orig_cl_ord_id=orig_cl_ord_id,
+            symbol='GOOGL',
+            side='BUY',
+            quantity=75,
+            price=170.00,
+            cl_ord_id=new_cl_ord_id
+        )
+
+        assert amend_response is not None
+        assert amend_response.get(150) == b'5'  # ExecType: Replaced
+
+        # Verify both updated
+        time.sleep(0.1)
+        session = get_session(db_path)
+        order = session.query(Order).filter_by(cl_ord_id=new_cl_ord_id).first()
+        assert order is not None
+        assert order.quantity == 75
+        assert order.limit_price == 170.00
+        session.close()
+
+    def test_amend_nonexistent_order(self, fix_client, fix_server):
+        """Test amending an order that doesn't exist"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Try to amend non-existent order
+        amend_response = fix_client.send_cancel_replace_request(
+            orig_cl_ord_id="NONEXISTENT",
+            symbol='AAPL',
+            side='BUY',
+            quantity=100,
+            price=230.00,
+            cl_ord_id="NONEXISTENT_V2"
+        )
+
+        # Should receive OrderCancelReject
+        assert amend_response is not None
+        assert amend_response.get(simplefix.TAG_MSGTYPE) == simplefix.MSGTYPE_ORDER_CANCEL_REJECT
+        assert amend_response.get(434) == b'1'  # CxlRejReason: Unknown order
+
+    def test_amend_filled_order(self, fix_client, fix_server):
+        """Test trying to amend an order that's already filled"""
+        server, db_path = fix_server
+
+        fix_client.send_logon()
+        time.sleep(0.1)
+
+        # Submit and immediately fill order
+        orig_cl_ord_id = "AMEND_FILLED_001"
+        fix_client.send_new_order(
+            symbol='AAPL',
+            side='BUY',
+            quantity=50,
+            order_type='MARKET',
+            cl_ord_id=orig_cl_ord_id
+        )
+
+        time.sleep(0.2)
+
+        # Fill the order
+        session = get_session(db_path)
+        order = session.query(Order).filter_by(cl_ord_id=orig_cl_ord_id).first()
+        stock = session.query(Stock).filter_by(symbol='AAPL').first()
+        exec1 = Execution(order_id=order.id, exec_id=f"EXEC_{orig_cl_ord_id}_1",
+                         exec_quantity=50, exec_price=stock.last_price)
+        session.add(exec1)
+        order.filled_quantity = 50
+        order.remaining_quantity = 0
+        order.status = OrderStatus.FILLED
+        session.commit()
+        session.close()
+
+        time.sleep(0.1)
+
+        # Try to amend filled order
+        amend_response = fix_client.send_cancel_replace_request(
+            orig_cl_ord_id=orig_cl_ord_id,
+            symbol='AAPL',
+            side='BUY',
+            quantity=100,
+            cl_ord_id="AMEND_FILLED_001_V2"
+        )
+
+        # Should receive OrderCancelReject (too late)
+        assert amend_response is not None
+        assert amend_response.get(simplefix.TAG_MSGTYPE) == simplefix.MSGTYPE_ORDER_CANCEL_REJECT
+        assert amend_response.get(434) == b'0'  # CxlRejReason: Too late
