@@ -1,7 +1,7 @@
 """
 Pydantic schemas for API request/response validation
 """
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from typing import Optional, Literal
 from datetime import datetime
 from enum import Enum
@@ -64,15 +64,13 @@ class OrderCreateRequest(BaseModel):
     time_in_force: TimeInForceEnum = Field(default=TimeInForceEnum.DAY)
     sender_comp_id: str = Field(..., min_length=1, description="Client identifier")
 
-    @field_validator('limit_price')
-    @classmethod
-    def validate_limit_price(cls, v, info):
+    @model_validator(mode='after')
+    def validate_limit_price_for_order_type(self):
         """Validate that limit_price is provided for LIMIT orders"""
-        if info.data.get('order_type') == OrderTypeEnum.LIMIT and v is None:
-            raise ValueError('limit_price required for LIMIT orders')
-        if info.data.get('order_type') == OrderTypeEnum.STOP_LIMIT and v is None:
-            raise ValueError('limit_price required for STOP_LIMIT orders')
-        return v
+        if self.order_type in [OrderTypeEnum.LIMIT, OrderTypeEnum.STOP_LIMIT]:
+            if self.limit_price is None:
+                raise ValueError('limit_price required for LIMIT and STOP_LIMIT orders')
+        return self
 
     @field_validator('symbol')
     @classmethod
