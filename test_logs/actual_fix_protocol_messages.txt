@@ -1,0 +1,179 @@
+===============================================================================
+ACTUAL FIX PROTOCOL MESSAGES (FIX 4.2)
+===============================================================================
+
+This file shows the actual raw FIX protocol messages exchanged between
+the test client and broker server, with tag-by-tag breakdown.
+
+Note: In FIX protocol, fields are separated by SOH (Start of Header, ASCII 0x01)
+which displays as | in readable format below.
+
+===============================================================================
+1. LOGON MESSAGE (Client → Broker)
+===============================================================================
+
+Raw Bytes:
+8=FIX.4.2\x019=72\x0135=A\x0149=TEST_CLIENT\x0156=BROKER\x0134=1\x0152=20251023-00:14:14.766\x0198=0\x01108=30\x0110=028\x01
+
+Readable Format (| = SOH):
+8=FIX.4.2|9=72|35=A|49=TEST_CLIENT|56=BROKER|34=1|52=20251023-00:14:14.766|98=0|108=30|10=028|
+
+Tag Breakdown:
+  8  = BeginString       = FIX.4.2            (Protocol version)
+  9  = BodyLength        = 72                (Message body length in bytes)
+  35 = MsgType           = A                 (Logon message)
+  49 = SenderCompID      = TEST_CLIENT       (Message sender)
+  56 = TargetCompID      = BROKER            (Message destination)
+  34 = MsgSeqNum         = 1                 (Message sequence number)
+  52 = SendingTime       = 20251023-00:14:14.766  (UTC timestamp)
+  98 = EncryptMethod     = 0                 (None - no encryption)
+  108= HeartBtInt        = 30                (Heartbeat interval in seconds)
+  10 = CheckSum          = 028               (3-digit checksum for validation)
+
+===============================================================================
+2. LOGON RESPONSE (Broker → Client)
+===============================================================================
+
+Raw Bytes:
+8=FIX.4.2\x019=72\x0135=A\x0149=BROKER\x0156=TEST_CLIENT\x0134=1\x0198=0\x01108=30\x0152=20251023-00:14:14.768\x0110=030\x01
+
+Readable Format:
+8=FIX.4.2|9=72|35=A|49=BROKER|56=TEST_CLIENT|34=1|98=0|108=30|52=20251023-00:14:14.768|10=030|
+
+Tag Breakdown:
+  8  = BeginString       = FIX.4.2            (Protocol version)
+  9  = BodyLength        = 72                (Message body length)
+  35 = MsgType           = A                 (Logon acknowledgment)
+  49 = SenderCompID      = BROKER            (Now broker is sender)
+  56 = TargetCompID      = TEST_CLIENT       (Now client is target)
+  34 = MsgSeqNum         = 1                 (Broker's sequence number)
+  98 = EncryptMethod     = 0                 (No encryption)
+  108= HeartBtInt        = 30                (Heartbeat interval)
+  52 = SendingTime       = 20251023-00:14:14.768  (UTC timestamp)
+  10 = CheckSum          = 030               (Checksum)
+
+Note: SenderCompID and TargetCompID are reversed from the incoming message
+
+===============================================================================
+3. NEW ORDER SINGLE - Market Order (Client → Broker)
+===============================================================================
+
+Raw Bytes:
+8=FIX.4.2\x019=140\x0135=D\x0149=TEST_CLIENT\x0156=BROKER\x0134=2\x0152=20251023-00:14:15.069\x0111=SAMPLE_ORDER_001\x0121=1\x0155=AAPL\x0154=1\x0160=20251023-00:14:15.069\x0140=1\x0138=100\x0159=0\x0110=130\x01
+
+Readable Format:
+8=FIX.4.2|9=140|35=D|49=TEST_CLIENT|56=BROKER|34=2|52=20251023-00:14:15.069|11=SAMPLE_ORDER_001|21=1|55=AAPL|54=1|60=20251023-00:14:15.069|40=1|38=100|59=0|10=130|
+
+Tag Breakdown:
+  8  = BeginString       = FIX.4.2                  (Protocol version)
+  9  = BodyLength        = 140                      (Message body length)
+  35 = MsgType           = D                        (NewOrderSingle)
+  49 = SenderCompID      = TEST_CLIENT              (Client sending order)
+  56 = TargetCompID      = BROKER                   (Broker receiving order)
+  34 = MsgSeqNum         = 2                        (Sequence number 2)
+  52 = SendingTime       = 20251023-00:14:15.069    (UTC timestamp)
+  11 = ClOrdID           = SAMPLE_ORDER_001         (Client order ID)
+  21 = HandlInst         = 1                        (Automated execution, no intervention)
+  55 = Symbol            = AAPL                     (Stock ticker)
+  54 = Side              = 1                        (Buy: 1=Buy, 2=Sell)
+  60 = TransactTime      = 20251023-00:14:15.069    (Transaction timestamp)
+  40 = OrdType           = 1                        (Market order: 1=Market, 2=Limit)
+  38 = OrderQty          = 100                      (Order quantity: 100 shares)
+  59 = TimeInForce       = 0                        (Day: 0=Day, 1=GTC, 3=IOC, 4=FOK)
+  10 = CheckSum          = 130                      (Checksum)
+
+===============================================================================
+4. EXECUTION REPORT (would be sent Broker → Client)
+===============================================================================
+
+Note: The script failed before receiving the execution report due to database
+initialization issue, but the broker would send back an ExecutionReport (35=8)
+containing:
+
+  8  = BeginString       = FIX.4.2
+  9  = BodyLength        = [calculated]
+  35 = MsgType           = 8                        (ExecutionReport)
+  49 = SenderCompID      = BROKER
+  56 = TargetCompID      = TEST_CLIENT
+  34 = MsgSeqNum         = 2                        (Broker's next sequence)
+  52 = SendingTime       = [timestamp]
+  11 = ClOrdID           = SAMPLE_ORDER_001         (Original client order ID)
+  37 = OrderID           = [database ID]            (Broker's order ID)
+  17 = ExecID            = [execution ID]           (Execution report ID)
+  20 = ExecTransType     = 0                        (New)
+  39 = OrdStatus         = 0                        (New: order accepted)
+  150= ExecType          = 0                        (New)
+  55 = Symbol            = AAPL
+  54 = Side              = 1                        (Buy)
+  38 = OrderQty          = 100
+  40 = OrdType           = 1                        (Market)
+  59 = TimeInForce       = 0                        (Day)
+  151= LeavesQty         = 100                      (Unfilled quantity)
+  14 = CumQty            = 0                        (Filled quantity)
+  6  = AvgPx             = 0                        (Average fill price)
+  10 = CheckSum          = [calculated]
+
+===============================================================================
+FIX MESSAGE TYPES USED IN THIS SYSTEM
+===============================================================================
+
+35=A  Logon              - Session establishment
+35=0  Heartbeat          - Keep-alive message
+35=D  NewOrderSingle     - Submit new order
+35=8  ExecutionReport    - Order status update
+
+===============================================================================
+COMMON FIX TAG REFERENCE
+===============================================================================
+
+Standard Header Tags (always present):
+  8   BeginString        - FIX protocol version
+  9   BodyLength         - Message body length
+  35  MsgType            - Message type
+
+Session Tags:
+  49  SenderCompID       - Message originator
+  56  TargetCompID       - Message destination
+  34  MsgSeqNum          - Message sequence number
+  52  SendingTime        - Message timestamp
+
+Order Tags:
+  11  ClOrdID            - Client order ID (unique per client)
+  37  OrderID            - Broker-assigned order ID
+  17  ExecID             - Execution report ID
+  55  Symbol             - Stock ticker
+  54  Side               - 1=Buy, 2=Sell
+  38  OrderQty           - Order quantity
+  40  OrdType            - 1=Market, 2=Limit
+  44  Price              - Limit price (for limit orders)
+  59  TimeInForce        - 0=Day, 1=GTC, 3=IOC, 4=FOK
+  39  OrdStatus          - 0=New, 1=PartiallyFilled, 2=Filled
+  150 ExecType           - Execution type
+  151 LeavesQty          - Unfilled quantity
+  14  CumQty             - Cumulative filled quantity
+  6   AvgPx              - Average execution price
+
+Standard Trailer Tags (always present):
+  10  CheckSum           - 3-digit modulo 256 checksum
+
+===============================================================================
+MESSAGE FLOW IN INTEGRATION TESTS
+===============================================================================
+
+For each test, the following FIX message sequence occurs:
+
+1. Client → Broker: Logon (35=A)
+2. Broker → Client: Logon (35=A) [acknowledgment]
+3. Client → Broker: NewOrderSingle (35=D)
+4. Broker → Client: ExecutionReport (35=8) [status=NEW]
+5. [Optional: Additional orders or admin actions]
+6. Connection closed
+
+The tests verify that all messages are correctly:
+- Encoded with proper FIX 4.2 format
+- Tagged with correct SenderCompID/TargetCompID
+- Sequenced with incrementing MsgSeqNum
+- Parsed and stored in the database
+- Responded to with appropriate ExecutionReports
+
+===============================================================================
