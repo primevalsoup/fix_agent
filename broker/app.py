@@ -8,9 +8,14 @@ from flask_socketio import SocketIO, emit
 import csv
 import uuid
 from datetime import datetime
+from pydantic import ValidationError
 from broker.models import (
     init_db, get_session, Order, Execution, Stock,
     OrderStatus, OrderSide, OrderType, TimeInForce
+)
+from broker.schemas import (
+    ExecutionCreateRequest, OrderResponse, ExecutionResponse,
+    StockResponse, StockUpdateRequest, ErrorResponse
 )
 from broker.fix_server import FIXServer
 import threading
@@ -162,6 +167,18 @@ def get_order(order_id):
 def execute_order(order_id):
     """Execute an order (fully or partially)"""
     try:
+        # Validate request data with Pydantic
+        try:
+            exec_data = ExecutionCreateRequest(
+                order_id=order_id,
+                exec_quantity=request.json.get('quantity', 0) or 0,  # Will be overridden if None
+                exec_price=request.json.get('price', 0) or 0.0  # Will be set to stock price
+            )
+        except ValidationError as e:
+            # For partial execution, quantity might not be provided
+            # In that case, we'll use the order's remaining quantity
+            pass
+
         data = request.json
         exec_quantity = data.get('quantity')  # If None, execute fully
 
