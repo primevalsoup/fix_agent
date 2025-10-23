@@ -1,0 +1,79 @@
+2025-10-23 00:14:13,761 - FIXServer - INFO - FIX Server initialized: BROKER on localhost:15002
+2025-10-23 00:14:13,762 - FIXServer - INFO - FIX Server listening on localhost:15002
+2025-10-23 00:14:14,766 - FIXServer - INFO - Client connected from ('127.0.0.1', 23291)
+2025-10-23 00:14:14,767 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 00:14:14,767 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 00:14:14,768 - FIXServer - INFO - Sent Logon
+2025-10-23 00:14:15,069 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 00:14:15,070 - FIXServer - INFO - New Order: SAMPLE_ORDER_001 AAPL 1 100 @ MKT
+2025-10-23 00:14:15,081 - FIXServer - ERROR - Error handling new order: (sqlite3.OperationalError) no such table: orders
+[SQL: INSERT INTO orders (cl_ord_id, sender_comp_id, symbol, side, order_type, quantity, limit_price, time_in_force, status, filled_quantity, remaining_quantity, reject_reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('SAMPLE_ORDER_001', 'TEST_CLIENT', 'AAPL', 'BUY', 'MARKET', 100, None, 'DAY', 'NEW', 0, 100, None, '2025-10-23 00:14:15.080207', '2025-10-23 00:14:15.080210')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+Traceback (most recent call last):
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such table: orders
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/user/fix_agent/broker/fix_server.py", line 268, in _handle_new_order
+    session.commit()
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2030, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1311, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1286, in _prepare_impl
+    self.session.flush()
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4331, in flush
+    self._flush(objects)
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4466, in _flush
+    with util.safe_reraise():
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4427, in _flush
+    flush_context.execute()
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 1233, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/user/fix_agent/.venv/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 951, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: orders
+[SQL: INSERT INTO orders (cl_ord_id, sender_comp_id, symbol, side, order_type, quantity, limit_price, time_in_force, status, filled_quantity, remaining_quantity, reject_reason, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)]
+[parameters: ('SAMPLE_ORDER_001', 'TEST_CLIENT', 'AAPL', 'BUY', 'MARKET', 100, None, 'DAY', 'NEW', 0, 100, None, '2025-10-23 00:14:15.080207', '2025-10-23 00:14:15.080210')]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
