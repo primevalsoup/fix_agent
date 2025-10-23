@@ -123,6 +123,9 @@ class FIXServer:
                         # Get the remaining buffer
                         buffer = parser.get_buffer()
 
+                        # Log received raw message
+                        self.logger.debug(f"RECV: {msg.encode()}")
+
                         # Process the message
                         self._process_message_obj(msg, client_socket)
 

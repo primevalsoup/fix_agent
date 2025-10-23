@@ -1,0 +1,156 @@
+===============================================================================
+BIDIRECTIONAL FIX MESSAGE FLOW - Server Perspective
+===============================================================================
+
+This file shows the complete FIX protocol message exchange as seen from the
+broker server's perspective, with both RECEIVED (RECV) and SENT (SEND) messages
+captured at the DEBUG level.
+
+Each message pair shows:
+1. RECV: Raw bytes received from client
+2. SEND: Raw bytes sent back to client
+
+===============================================================================
+MESSAGE 1: LOGON REQUEST (Client → Broker)
+===============================================================================
+
+RECV: b'8=FIX.4.2\x019=72\x0135=A\x0149=TEST_CLIENT\x0156=BROKER\x0134=1\x0152=20251023-00:52:35.242\x0198=0\x01108=30\x0110=022\x01'
+
+Readable:
+8=FIX.4.2|9=72|35=A|49=TEST_CLIENT|56=BROKER|34=1|52=20251023-00:52:35.242|98=0|108=30|10=022|
+
+Breakdown:
+  35 = A (Logon)
+  49 = TEST_CLIENT (sender)
+  56 = BROKER (target)
+  34 = 1 (sequence number)
+  98 = 0 (no encryption)
+  108 = 30 (heartbeat interval)
+
+===============================================================================
+MESSAGE 2: LOGON RESPONSE (Broker → Client)
+===============================================================================
+
+SEND: b'8=FIX.4.2\x019=72\x0135=A\x0149=BROKER\x0156=TEST_CLIENT\x0134=1\x0198=0\x01108=30\x0152=20251023-00:52:35.244\x0110=024\x01'
+
+Readable:
+8=FIX.4.2|9=72|35=A|49=BROKER|56=TEST_CLIENT|34=1|98=0|108=30|52=20251023-00:52:35.244|10=024|
+
+Breakdown:
+  35 = A (Logon acknowledgment)
+  49 = BROKER (sender - reversed)
+  56 = TEST_CLIENT (target - reversed)
+  34 = 1 (broker's sequence starts at 1)
+
+Note: SenderCompID and TargetCompID are swapped in the response
+
+===============================================================================
+MESSAGE 3: NEW ORDER SINGLE - MARKET (Client → Broker)
+===============================================================================
+
+RECV: b'8=FIX.4.2\x019=133\x0135=D\x0149=TEST_CLIENT\x0156=BROKER\x0134=2\x0152=20251023-00:52:35.644\x0111=ORDER_001\x0121=1\x0155=AAPL\x0154=1\x0160=20251023-00:52:35.644\x0140=1\x0138=100\x0159=0\x0110=105\x01'
+
+Readable:
+8=FIX.4.2|9=133|35=D|49=TEST_CLIENT|56=BROKER|34=2|52=20251023-00:52:35.644|11=ORDER_001|21=1|55=AAPL|54=1|60=20251023-00:52:35.644|40=1|38=100|59=0|10=105|
+
+Breakdown:
+  35 = D (NewOrderSingle)
+  34 = 2 (client's next sequence)
+  11 = ORDER_001 (client order ID)
+  55 = AAPL (symbol)
+  54 = 1 (side: Buy)
+  40 = 1 (order type: Market)
+  38 = 100 (quantity)
+  59 = 0 (time in force: Day)
+
+===============================================================================
+MESSAGE 4: EXECUTION REPORT - MARKET ORDER (Broker → Client)
+===============================================================================
+
+SEND: b'8=FIX.4.2\x019=138\x0135=8\x0149=BROKER\x0156=TEST_CLIENT\x0134=2\x0111=ORDER_001\x0117=02b81555\x01150=0\x0139=0\x0155=AAPL\x0154=1\x0138=100\x0140=1\x0114=0\x016=0\x01151=100\x0152=20251023-00:52:35.665\x0110=021\x01'
+
+Readable:
+8=FIX.4.2|9=138|35=8|49=BROKER|56=TEST_CLIENT|34=2|11=ORDER_001|17=02b81555|150=0|39=0|55=AAPL|54=1|38=100|40=1|14=0|6=0|151=100|52=20251023-00:52:35.665|10=021|
+
+Breakdown:
+  35 = 8 (ExecutionReport)
+  34 = 2 (broker's next sequence)
+  11 = ORDER_001 (echoed client order ID)
+  17 = 02b81555 (unique execution ID)
+  150 = 0 (exec type: New)
+  39 = 0 (order status: New)
+  55 = AAPL (symbol)
+  54 = 1 (side: Buy)
+  38 = 100 (order quantity)
+  40 = 1 (order type: Market)
+  14 = 0 (cumulative filled quantity)
+  6 = 0 (average price)
+  151 = 100 (leaves quantity - unfilled)
+
+===============================================================================
+MESSAGE 5: NEW ORDER SINGLE - LIMIT (Client → Broker)
+===============================================================================
+
+RECV: b'8=FIX.4.2\x019=142\x0135=D\x0149=TEST_CLIENT\x0156=BROKER\x0134=3\x0152=20251023-00:52:36.145\x0111=ORDER_002\x0121=1\x0155=MSFT\x0154=2\x0160=20251023-00:52:36.145\x0140=2\x0144=425.00\x0138=50\x0159=1\x0110=039\x01'
+
+Readable:
+8=FIX.4.2|9=142|35=D|49=TEST_CLIENT|56=BROKER|34=3|52=20251023-00:52:36.145|11=ORDER_002|21=1|55=MSFT|54=2|60=20251023-00:52:36.145|40=2|44=425.00|38=50|59=1|10=039|
+
+Breakdown:
+  35 = D (NewOrderSingle)
+  34 = 3 (client's next sequence)
+  11 = ORDER_002 (client order ID)
+  55 = MSFT (symbol)
+  54 = 2 (side: Sell)
+  40 = 2 (order type: Limit)
+  44 = 425.00 (limit price)
+  38 = 50 (quantity)
+  59 = 1 (time in force: GTC)
+
+===============================================================================
+MESSAGE 6: EXECUTION REPORT - LIMIT ORDER (Broker → Client)
+===============================================================================
+
+SEND: b'8=FIX.4.2\x019=136\x0135=8\x0149=BROKER\x0156=TEST_CLIENT\x0134=3\x0111=ORDER_002\x0117=74c8a6ba\x01150=0\x0139=0\x0155=MSFT\x0154=2\x0138=50\x0140=2\x0114=0\x016=0\x01151=50\x0152=20251023-00:52:36.163\x0110=105\x01'
+
+Readable:
+8=FIX.4.2|9=136|35=8|49=BROKER|56=TEST_CLIENT|34=3|11=ORDER_002|17=74c8a6ba|150=0|39=0|55=MSFT|54=2|38=50|40=2|14=0|6=0|151=50|52=20251023-00:52:36.163|10=105|
+
+Breakdown:
+  35 = 8 (ExecutionReport)
+  34 = 3 (broker's next sequence)
+  11 = ORDER_002 (echoed client order ID)
+  17 = 74c8a6ba (unique execution ID)
+  150 = 0 (exec type: New)
+  39 = 0 (order status: New)
+  55 = MSFT (symbol)
+  54 = 2 (side: Sell)
+  38 = 50 (order quantity)
+  40 = 2 (order type: Limit)
+  14 = 0 (cumulative filled quantity)
+  6 = 0 (average price)
+  151 = 50 (leaves quantity - unfilled)
+
+===============================================================================
+SUMMARY OF MESSAGE FLOW
+===============================================================================
+
+Direction  MsgType  Seq  Description
+---------  -------  ---  ------------------------------------------------
+RECV  →    Logon    1    Client establishes session
+SEND  ←    Logon    1    Broker acknowledges session
+RECV  →    D        2    Client submits market order: AAPL Buy 100
+SEND  ←    8        2    Broker confirms order accepted (ExecID: 02b81555)
+RECV  →    D        3    Client submits limit order: MSFT Sell 50 @ 425.00
+SEND  ←    8        3    Broker confirms order accepted (ExecID: 74c8a6ba)
+
+Key Observations:
+1. Each party maintains its own message sequence number (34)
+2. ClOrdID (11) is echoed in ExecutionReports for correlation
+3. Each ExecutionReport has a unique ExecID (17)
+4. SenderCompID/TargetCompID swap between request and response
+5. All messages use FIX 4.2 format with SOH (0x01) delimiters
+6. Each message includes a checksum (10) for validation
+7. Both market and limit orders follow the same NewOrderSingle → ExecutionReport pattern
+
+===============================================================================
