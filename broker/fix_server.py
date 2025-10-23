@@ -110,35 +110,24 @@ class FIXServer:
 
                 buffer += data
 
-                # Process complete FIX messages
+                # Process complete FIX messages using FixParser
+                parser = simplefix.FixParser()
+                parser.append_buffer(buffer)
+
                 while True:
-                    # Find FIX message (starts with 8=FIX)
-                    if b'8=FIX' not in buffer:
-                        break
-
-                    # Extract message (simple approach - look for checksum)
                     try:
-                        # Find start of message
-                        start = buffer.find(b'8=FIX')
-                        if start == -1:
+                        msg = parser.get_message()
+                        if not msg:
                             break
 
-                        # Find checksum field (10=)
-                        checksum_pos = buffer.find(b'\x0110=', start)
-                        if checksum_pos == -1:
-                            break
+                        # Get the remaining buffer
+                        buffer = parser.get_buffer()
 
-                        # End is 7 bytes after checksum start (10=XXX\x01)
-                        end = checksum_pos + 7
-
-                        msg_bytes = buffer[start:end]
-                        buffer = buffer[end:]
-
-                        # Parse and handle message
-                        self._process_message(msg_bytes, client_socket)
+                        # Process the message
+                        self._process_message_obj(msg, client_socket)
 
                     except Exception as e:
-                        self.logger.error(f"Error processing message: {e}")
+                        self.logger.error(f"Error processing message: {e}", exc_info=True)
                         break
 
             except Exception as e:
@@ -149,19 +138,9 @@ class FIXServer:
         if client_socket in self.clients:
             del self.clients[client_socket]
 
-    def _process_message(self, msg_bytes, client_socket):
-        """Process a FIX message"""
+    def _process_message_obj(self, msg, client_socket):
+        """Process a parsed FIX message object"""
         try:
-            # Log raw FIX message received
-            self.logger.debug(f"RECV: {msg_bytes}")
-
-            parser = simplefix.FixParser()
-            parser.append_buffer(msg_bytes)
-            msg = parser.get_message()
-
-            if not msg:
-                return
-
             msg_type = msg.get(simplefix.TAG_MSGTYPE)
             sender = msg.get(simplefix.TAG_SENDER_COMPID)
 
@@ -183,29 +162,36 @@ class FIXServer:
                 self.logger.warning(f"Unknown message type: {msg_type}")
 
         except Exception as e:
-            self.logger.error(f"Error processing message: {e}")
+            self.logger.error(f"Error processing message: {e}", exc_info=True)
 
     def _handle_logon(self, msg, client_socket):
         """Handle Logon message"""
-        target_comp_id = msg.get(simplefix.TAG_SENDER_COMPID).decode('utf-8')
-        self.logger.info(f"Logon from {target_comp_id}")
+        try:
+            target_comp_id = msg.get(simplefix.TAG_SENDER_COMPID).decode('utf-8')
+            self.logger.info(f"Logon from {target_comp_id}")
 
-        # Store client info
-        self.clients[client_socket] = {
-            'target_comp_id': target_comp_id,
-            'msg_seq_num': 1
-        }
+            # Store client info
+            self.clients[client_socket] = {
+                'target_comp_id': target_comp_id,
+                'msg_seq_num': 1
+            }
 
-        # Send Logon response
-        response = simplefix.FixMessage()
-        response.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_LOGON)
-        response.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
-        response.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
-        response.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
-        response.append_pair(98, 0)  # EncryptMethod: None
-        response.append_pair(108, 30)  # HeartBtInt: 30 seconds
+            # Send Logon response
+            self.logger.debug("Creating Logon response...")
+            response = simplefix.FixMessage()
+            response.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
+            response.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_LOGON)
+            response.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
+            response.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
+            response.append_pair(simplefix.TAG_MSGSEQNUM, self.msg_seq_num)
+            response.append_pair(98, 0)  # EncryptMethod: None
+            response.append_pair(108, 30)  # HeartBtInt: 30 seconds
 
-        self._send_message(response, client_socket)
+            self.logger.debug("Sending Logon response...")
+            self._send_message(response, client_socket)
+            self.logger.debug("Logon response sent")
+        except Exception as e:
+            self.logger.error(f"Error in _handle_logon: {e}", exc_info=True)
 
     def _handle_heartbeat(self, msg, client_socket):
         """Handle Heartbeat message"""
@@ -218,6 +204,7 @@ class FIXServer:
         target_comp_id = self.clients[client_socket]['target_comp_id']
 
         response = simplefix.FixMessage()
+        response.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
         response.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_HEARTBEAT)
         response.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
         response.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
@@ -313,6 +300,7 @@ class FIXServer:
         target_comp_id = self.clients[client_socket]['target_comp_id']
 
         msg = simplefix.FixMessage()
+        msg.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
         msg.append_pair(simplefix.TAG_MSGTYPE, simplefix.MSGTYPE_EXECUTION_REPORT)
         msg.append_pair(simplefix.TAG_SENDER_COMPID, self.sender_comp_id)
         msg.append_pair(simplefix.TAG_TARGET_COMPID, target_comp_id)
@@ -347,10 +335,6 @@ class FIXServer:
     def _send_message(self, msg, client_socket):
         """Send FIX message to client"""
         try:
-            # Add BeginString if not already set
-            if not msg.get(simplefix.TAG_BEGINSTRING):
-                msg.append_pair(simplefix.TAG_BEGINSTRING, "FIX.4.2", header=True)
-
             msg.append_utc_timestamp(simplefix.TAG_SENDING_TIME)
             encoded = msg.encode()
 

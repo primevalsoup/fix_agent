@@ -127,34 +127,23 @@ class FIXTestClient:
         buffer = b''
 
         try:
-            while True:
-                data = self.socket.recv(4096)
-                if not data:
-                    break
-
+            # Receive data
+            data = self.socket.recv(4096)
+            if data:
                 buffer += data
 
-                # Look for complete message
-                if b'8=FIX' in buffer and b'\x0110=' in buffer:
-                    # Find message boundaries
-                    start = buffer.find(b'8=FIX')
-                    checksum_pos = buffer.find(b'\x0110=', start)
+            # Use FixParser to parse the buffer
+            parser = simplefix.FixParser()
+            parser.append_buffer(buffer)
+            msg = parser.get_message()
 
-                    if checksum_pos != -1:
-                        # Found complete message
-                        end = checksum_pos + 7
-                        msg_bytes = buffer[start:end]
+            return msg
 
-                        # Parse message
-                        parser = simplefix.FixParser()
-                        parser.append_buffer(msg_bytes)
-                        msg = parser.get_message()
-
-                        return msg
         except socket.timeout:
             return None
-
-        return None
+        except Exception as e:
+            print(f"Error receiving message: {e}")
+            return None
 
 
 @pytest.fixture(scope='session')
