@@ -83,35 +83,95 @@ Tag Breakdown:
   10 = CheckSum          = 130                      (Checksum)
 
 ===============================================================================
-4. EXECUTION REPORT (would be sent Broker → Client)
+4. EXECUTION REPORT (Broker → Client)
 ===============================================================================
 
-Note: The script failed before receiving the execution report due to database
-initialization issue, but the broker would send back an ExecutionReport (35=8)
-containing:
+Raw Bytes:
+8=FIX.4.2\x019=145\x0135=8\x0149=BROKER\x0156=TEST_CLIENT\x0134=2\x0111=ORDER_MARKET_001\x0117=bb1d4e4d\x01150=0\x0139=0\x0155=AAPL\x0154=1\x0138=100\x0140=1\x0114=0\x016=0\x01151=100\x0152=20251023-00:43:30.417\x0110=234\x01
 
-  8  = BeginString       = FIX.4.2
-  9  = BodyLength        = [calculated]
+Readable Format:
+8=FIX.4.2|9=145|35=8|49=BROKER|56=TEST_CLIENT|34=2|11=ORDER_MARKET_001|17=bb1d4e4d|150=0|39=0|55=AAPL|54=1|38=100|40=1|14=0|6=0|151=100|52=20251023-00:43:30.417|10=234|
+
+Tag Breakdown:
+  8  = BeginString       = FIX.4.2                  (Protocol version)
+  9  = BodyLength        = 145                      (Message body length)
   35 = MsgType           = 8                        (ExecutionReport)
-  49 = SenderCompID      = BROKER
-  56 = TargetCompID      = TEST_CLIENT
-  34 = MsgSeqNum         = 2                        (Broker's next sequence)
-  52 = SendingTime       = [timestamp]
-  11 = ClOrdID           = SAMPLE_ORDER_001         (Original client order ID)
-  37 = OrderID           = [database ID]            (Broker's order ID)
-  17 = ExecID            = [execution ID]           (Execution report ID)
-  20 = ExecTransType     = 0                        (New)
-  39 = OrdStatus         = 0                        (New: order accepted)
-  150= ExecType          = 0                        (New)
-  55 = Symbol            = AAPL
+  49 = SenderCompID      = BROKER                   (Broker sending response)
+  56 = TargetCompID      = TEST_CLIENT              (Client receiving response)
+  34 = MsgSeqNum         = 2                        (Broker's sequence number)
+  11 = ClOrdID           = ORDER_MARKET_001         (Original client order ID)
+  17 = ExecID            = bb1d4e4d                 (Unique execution report ID)
+  150= ExecType          = 0                        (New: 0=New, 1=PartialFill, 2=Fill)
+  39 = OrdStatus         = 0                        (New: 0=New, 1=PartiallyFilled, 2=Filled)
+  55 = Symbol            = AAPL                     (Stock ticker)
   54 = Side              = 1                        (Buy)
-  38 = OrderQty          = 100
-  40 = OrdType           = 1                        (Market)
-  59 = TimeInForce       = 0                        (Day)
-  151= LeavesQty         = 100                      (Unfilled quantity)
-  14 = CumQty            = 0                        (Filled quantity)
-  6  = AvgPx             = 0                        (Average fill price)
-  10 = CheckSum          = [calculated]
+  38 = OrderQty          = 100                      (Order quantity)
+  40 = OrdType           = 1                        (Market order)
+  14 = CumQty            = 0                        (Cumulative filled quantity)
+  6  = AvgPx             = 0                        (Average execution price)
+  151= LeavesQty         = 100                      (Remaining unfilled quantity)
+  52 = SendingTime       = 20251023-00:43:30.417    (UTC timestamp)
+  10 = CheckSum          = 234                      (Checksum)
+
+===============================================================================
+5. NEW ORDER SINGLE - Limit Order (Client → Broker)
+===============================================================================
+
+Raw Bytes:
+8=FIX.4.2\x019=148\x0135=D\x0149=TEST_CLIENT\x0156=BROKER\x0134=3\x0152=20251023-00:43:30.900\x0111=ORDER_LIMIT_001\x0121=1\x0155=MSFT\x0154=2\x0160=20251023-00:43:30.901\x0140=2\x0144=425.00\x0138=50\x0159=1\x0110=253\x01
+
+Readable Format:
+8=FIX.4.2|9=148|35=D|49=TEST_CLIENT|56=BROKER|34=3|52=20251023-00:43:30.900|11=ORDER_LIMIT_001|21=1|55=MSFT|54=2|60=20251023-00:43:30.901|40=2|44=425.00|38=50|59=1|10=253|
+
+Tag Breakdown:
+  8  = BeginString       = FIX.4.2                  (Protocol version)
+  9  = BodyLength        = 148                      (Message body length)
+  35 = MsgType           = D                        (NewOrderSingle)
+  49 = SenderCompID      = TEST_CLIENT              (Client sending order)
+  56 = TargetCompID      = BROKER                   (Broker receiving order)
+  34 = MsgSeqNum         = 3                        (Sequence number 3)
+  52 = SendingTime       = 20251023-00:43:30.900    (UTC timestamp)
+  11 = ClOrdID           = ORDER_LIMIT_001          (Client order ID)
+  21 = HandlInst         = 1                        (Automated execution)
+  55 = Symbol            = MSFT                     (Stock ticker)
+  54 = Side              = 2                        (Sell: 1=Buy, 2=Sell)
+  60 = TransactTime      = 20251023-00:43:30.901    (Transaction timestamp)
+  40 = OrdType           = 2                        (Limit order: 1=Market, 2=Limit)
+  44 = Price             = 425.00                   (Limit price)
+  38 = OrderQty          = 50                       (Order quantity: 50 shares)
+  59 = TimeInForce       = 1                        (GTC: 0=Day, 1=GTC, 3=IOC, 4=FOK)
+  10 = CheckSum          = 253                      (Checksum)
+
+===============================================================================
+6. EXECUTION REPORT - Limit Order (Broker → Client)
+===============================================================================
+
+Raw Bytes:
+8=FIX.4.2\x019=142\x0135=8\x0149=BROKER\x0156=TEST_CLIENT\x0134=3\x0111=ORDER_LIMIT_001\x0117=7ebc1d96\x01150=0\x0139=0\x0155=MSFT\x0154=2\x0138=50\x0140=2\x0114=0\x016=0\x01151=50\x0152=20251023-00:43:30.916\x0110=072\x01
+
+Readable Format:
+8=FIX.4.2|9=142|35=8|49=BROKER|56=TEST_CLIENT|34=3|11=ORDER_LIMIT_001|17=7ebc1d96|150=0|39=0|55=MSFT|54=2|38=50|40=2|14=0|6=0|151=50|52=20251023-00:43:30.916|10=072|
+
+Tag Breakdown:
+  8  = BeginString       = FIX.4.2                  (Protocol version)
+  9  = BodyLength        = 142                      (Message body length)
+  35 = MsgType           = 8                        (ExecutionReport)
+  49 = SenderCompID      = BROKER                   (Broker sending response)
+  56 = TargetCompID      = TEST_CLIENT              (Client receiving response)
+  34 = MsgSeqNum         = 3                        (Broker's sequence number)
+  11 = ClOrdID           = ORDER_LIMIT_001          (Original client order ID)
+  17 = ExecID            = 7ebc1d96                 (Unique execution report ID)
+  150= ExecType          = 0                        (New)
+  39 = OrdStatus         = 0                        (New: order accepted)
+  55 = Symbol            = MSFT                     (Stock ticker)
+  54 = Side              = 2                        (Sell)
+  38 = OrderQty          = 50                       (Order quantity)
+  40 = OrdType           = 2                        (Limit order)
+  14 = CumQty            = 0                        (Cumulative filled quantity)
+  6  = AvgPx             = 0                        (Average execution price)
+  151= LeavesQty         = 50                       (Remaining unfilled quantity)
+  52 = SendingTime       = 20251023-00:43:30.916    (UTC timestamp)
+  10 = CheckSum          = 072                      (Checksum)
 
 ===============================================================================
 FIX MESSAGE TYPES USED IN THIS SYSTEM
@@ -160,20 +220,26 @@ Standard Trailer Tags (always present):
 MESSAGE FLOW IN INTEGRATION TESTS
 ===============================================================================
 
-For each test, the following FIX message sequence occurs:
+Complete FIX message sequence (as shown above):
 
-1. Client → Broker: Logon (35=A)
-2. Broker → Client: Logon (35=A) [acknowledgment]
-3. Client → Broker: NewOrderSingle (35=D)
-4. Broker → Client: ExecutionReport (35=8) [status=NEW]
-5. [Optional: Additional orders or admin actions]
-6. Connection closed
+1. Client → Broker: Logon (35=A) - Session establishment request
+2. Broker → Client: Logon (35=A) - Session establishment acknowledgment
+3. Client → Broker: NewOrderSingle (35=D) - Market order for AAPL
+4. Broker → Client: ExecutionReport (35=8) - Order accepted, status=NEW
+5. Client → Broker: NewOrderSingle (35=D) - Limit order for MSFT
+6. Broker → Client: ExecutionReport (35=8) - Order accepted, status=NEW
+7. Connection closed
 
 The tests verify that all messages are correctly:
-- Encoded with proper FIX 4.2 format
+- Encoded with proper FIX 4.2 format using SOH (0x01) delimiters
 - Tagged with correct SenderCompID/TargetCompID
-- Sequenced with incrementing MsgSeqNum
-- Parsed and stored in the database
-- Responded to with appropriate ExecutionReports
+- Sequenced with incrementing MsgSeqNum (1, 2, 3...)
+- Parsed and stored in the database with all fields
+- Responded to with appropriate ExecutionReports containing:
+  * ClOrdID matching the original order
+  * Unique ExecID for each report
+  * OrdStatus=0 (NEW) for newly accepted orders
+  * LeavesQty showing unfilled quantity
+  * All order details (Symbol, Side, Qty, Type, etc.)
 
 ===============================================================================

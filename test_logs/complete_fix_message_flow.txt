@@ -1,0 +1,82 @@
+Database initialized with stocks
+2025-10-23 00:43:28,990 - FIXServer - INFO - FIX Server initialized: BROKER on localhost:15003
+2025-10-23 00:43:28,992 - FIXServer - INFO - FIX Server listening on localhost:15003
+
+================================================================================
+CREATING FIX CLIENT TO GENERATE COMPLETE MESSAGE FLOW
+================================================================================
+
+--------------------------------------------------------------------------------
+1. CLIENT → BROKER: LOGON (35=A)2025-10-23 00:43:29,995 - FIXServer - INFO - Client connected from ('127.0.0.1', 54373)
+
+--------------------------------------------------------------------------------
+Raw bytes: b'8=FIX.4.2\x019=72\x0135=A\x0149=TEST_CLIENT\x0156=BROKER\x0134=1\x0152=20251023-00:43:29.996\x0198=0\x01108=30\x0110=041\x01'
+Readable:  8=FIX.4.2|9=72|35=A|49=TEST_CLIENT|56=BROKER|34=1|52=20251023-00:43:29.996|98=0|108=30|10=041|
+2025-10-23 00:43:29,997 - FIXServer - INFO - Received Logon from TEST_CLIENT
+2025-10-23 00:43:29,997 - FIXServer - INFO - Logon from TEST_CLIENT
+2025-10-23 00:43:29,997 - FIXServer - INFO - Sent Logon
+
+--------------------------------------------------------------------------------
+2. BROKER → CLIENT: LOGON RESPONSE (35=A)
+--------------------------------------------------------------------------------
+Raw bytes: b'8=FIX.4.2\x019=72\x0135=A\x0149=BROKER\x0156=TEST_CLIENT\x0134=1\x0198=0\x01108=30\x0152=20251023-00:43:29.997\x0110=042\x01'
+Readable:  8=FIX.4.2|9=72|35=A|49=BROKER|56=TEST_CLIENT|34=1|98=0|108=30|52=20251023-00:43:29.997|10=042|
+
+--------------------------------------------------------------------------------
+3. CLIENT → BROKER: NEW ORDER SINGLE - MARKET (35=D)
+--------------------------------------------------------------------------------
+Raw bytes: b'8=FIX.4.2\x019=140\x0135=D\x0149=TEST_CLIENT\x0156=BROKER\x0134=2\x0152=20251023-00:43:30.398\x0111=ORDER_MARKET_001\x0121=1\x0155=AAPL\x0154=1\x0160=20251023-00:43:30.398\x0140=1\x0138=100\x0159=0\x0110=140\x01'
+Readable:  8=FIX.4.2|9=140|35=D|49=TEST_CLIENT|56=BROKER|34=2|52=20251023-00:43:30.398|11=ORDER_MARKET_001|21=1|55=AAPL|54=1|60=20251023-00:43:30.398|40=1|38=100|59=0|10=140|
+2025-10-23 00:43:30,398 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 00:43:30,399 - FIXServer - INFO - New Order: ORDER_MARKET_001 AAPL 1 100 @ MKT
+2025-10-23 00:43:30,417 - FIXServer - INFO - Sent ExecutionReport
+
+--------------------------------------------------------------------------------
+4. BROKER → CLIENT: EXECUTION REPORT (35=8)
+--------------------------------------------------------------------------------
+Raw bytes: b'8=FIX.4.2\x019=145\x0135=8\x0149=BROKER\x0156=TEST_CLIENT\x0134=2\x0111=ORDER_MARKET_001\x0117=bb1d4e4d\x01150=0\x0139=0\x0155=AAPL\x0154=1\x0138=100\x0140=1\x0114=0\x016=0\x01151=100\x0152=20251023-00:43:30.417\x0110=234\x01'
+Readable:  8=FIX.4.2|9=145|35=8|49=BROKER|56=TEST_CLIENT|34=2|11=ORDER_MARKET_001|17=bb1d4e4d|150=0|39=0|55=AAPL|54=1|38=100|40=1|14=0|6=0|151=100|52=20251023-00:43:30.417|10=234|
+
+Parsed Execution Report:
+  ClOrdID (11):    ORDER_MARKET_001
+  OrderID (37):    N/A
+  ExecID (17):     bb1d4e4d
+  OrdStatus (39):  0 (0=New)
+  Symbol (55):     AAPL
+  Side (54):       1 (1=Buy)
+  OrderQty (38):   100
+  LeavesQty (151): 100
+
+--------------------------------------------------------------------------------
+5. CLIENT → BROKER: NEW ORDER SINGLE - LIMIT (35=D)
+--------------------------------------------------------------------------------
+Raw bytes: b'8=FIX.4.2\x019=148\x0135=D\x0149=TEST_CLIENT\x0156=BROKER\x0134=3\x0152=20251023-00:43:30.900\x0111=ORDER_LIMIT_001\x0121=1\x0155=MSFT\x0154=2\x0160=20251023-00:43:30.901\x0140=2\x0144=425.00\x0138=50\x0159=1\x0110=253\x01'
+Readable:  8=FIX.4.2|9=148|35=D|49=TEST_CLIENT|56=BROKER|34=3|52=20251023-00:43:30.900|11=ORDER_LIMIT_001|21=1|55=MSFT|54=2|60=20251023-00:43:30.901|40=2|44=425.00|38=50|59=1|10=253|
+2025-10-23 00:43:30,901 - FIXServer - INFO - Received NewOrderSingle from TEST_CLIENT
+2025-10-23 00:43:30,901 - FIXServer - INFO - New Order: ORDER_LIMIT_001 MSFT 2 50 @ 425.0
+2025-10-23 00:43:30,917 - FIXServer - INFO - Sent ExecutionReport
+
+--------------------------------------------------------------------------------
+6. BROKER → CLIENT: EXECUTION REPORT (35=8)
+--------------------------------------------------------------------------------
+Raw bytes: b'8=FIX.4.2\x019=142\x0135=8\x0149=BROKER\x0156=TEST_CLIENT\x0134=3\x0111=ORDER_LIMIT_001\x0117=7ebc1d96\x01150=0\x0139=0\x0155=MSFT\x0154=2\x0138=50\x0140=2\x0114=0\x016=0\x01151=50\x0152=20251023-00:43:30.916\x0110=072\x01'
+Readable:  8=FIX.4.2|9=142|35=8|49=BROKER|56=TEST_CLIENT|34=3|11=ORDER_LIMIT_001|17=7ebc1d96|150=0|39=0|55=MSFT|54=2|38=50|40=2|14=0|6=0|151=50|52=20251023-00:43:30.916|10=072|
+
+Parsed Execution Report:
+  ClOrdID (11):    ORDER_LIMIT_001
+  OrderID (37):    N/A
+  OrdStatus (39):  0 (0=New)
+  Symbol (55):     MSFT
+  Side (54):       2 (2=Sell)
+  Price (44):      N/A
+
+================================================================================
+COMPLETE FIX MESSAGE FLOW CAPTURED
+================================================================================
+
+Check fix_complete_logs/ directory for server-side DEBUG logs
+  - fix_server.log: Complete server log with DEBUG messages and raw bytes
+  - fix_messages.log: INFO level FIX messages only
+2025-10-23 00:43:31,203 - FIXServer - INFO - Client ('127.0.0.1', 54373) disconnected
+2025-10-23 00:43:31,703 - FIXServer - INFO - Stopping FIX server
+2025-10-23 00:43:31,704 - FIXServer - INFO - FIX server stopped
